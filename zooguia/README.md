@@ -12,9 +12,13 @@ até o recinto escolhido.
 
 | Aba | Função |
 |-----|--------|
-| 📋 **Animais** | Lista com busca; mostra a distância de cada animal até você, ordenada do mais perto para o mais longe |
-| 🗺️ **Mapa** | Mapa real (OpenStreetMap) com os recintos, sua posição e uma linha até o destino |
+| 📋 **Animais** | Lista com busca; mostra a distância de cada animal até você, ordenada do mais perto para o mais longe. Toque na ⭐ para favoritar (fica salvo no aparelho) e use os filtros "Favoritos" e "🚻 Apoio" (banheiros, bebedouros, restaurante, parquinho) |
+| 🧭 **Roteiro** | Escolha com antecedência os animais que quer ver (ou importe os favoritos) e o app calcula a **melhor ordem de visita** — vizinho mais próximo + refinamento 2-opt, partindo da entrada ou da sua posição GPS. Marque cada parada como "✅ Visitei" e o app indica a próxima |
+| 🗺️ **Mapa** | Mapa real (OpenStreetMap) com os recintos, pontos de apoio, sua posição, linha até o destino e a rota do roteiro com paradas numeradas — ou o **mapa ilustrado oficial** do zoo, com zoom |
 | 📸 **Radar AR** | Câmera aberta com uma seta sobreposta que gira conforme você vira o celular; ao chegar a menos de 30 m, o animal "aparece" na tela comemorando 🎉 |
+
+Favoritos, roteiro e paradas visitadas ficam salvos no celular (localStorage) —
+a família pode montar o plano em casa e usar no dia seguinte no zoo.
 
 Por ser PWA, dá para **instalar na tela inicial** (sem loja de aplicativos) e o
 app **funciona offline** depois da primeira visita — essencial, porque o sinal de
@@ -42,26 +46,36 @@ python3 -m http.server 8000
 # abra http://localhost:8000
 ```
 
-Para testar no celular de verdade, publique em qualquer hospedagem com HTTPS
-gratuito, por exemplo:
+### Publicando na HostGator
 
-- **GitHub Pages** (Settings → Pages → apontar para a pasta `zooguia/`)
-- **Netlify** / **Vercel** / **Cloudflare Pages** (arrastar a pasta e pronto)
+O app é 100% estático — basta subir os arquivos, sem instalar nada no servidor:
 
-Depois é só abrir o link no celular, dar as permissões de localização, câmera e
-bússola (no iPhone a bússola pede confirmação extra) e usar "Adicionar à tela
-de início" para instalar.
+1. Entre no **cPanel → Gerenciador de Arquivos** (ou use FTP/FileZilla).
+2. Envie o **conteúdo** da pasta `zooguia/` para `public_html/zooguia/`
+   (ou para `public_html/` se quiser no domínio raiz). Não esqueça o
+   `.htaccess` — ele é oculto; ative "Mostrar arquivos ocultos" no cPanel.
+3. Garanta que o site abre em **HTTPS** (a HostGator oferece SSL gratuito em
+   cPanel → SSL/TLS Status → Run AutoSSL). Sem HTTPS, câmera e GPS não funcionam.
+4. Abra `https://seudominio.com.br/zooguia/` no celular, dê as permissões de
+   localização, câmera e bússola (no iPhone a bússola pede confirmação extra)
+   e use "Adicionar à tela de início" para instalar.
+
+> Ao atualizar arquivos no servidor, incremente a versão dos caches no topo do
+> `sw.js` (`v2` → `v3`…) para os visitantes receberem a nova versão.
 
 ## ⚠️ Sobre as coordenadas dos recintos
 
-As posições em `data/animais.json` são **aproximadas/fictícias**, dentro da área
-do zoo, apenas para demonstrar o funcionamento. Para uso real:
+O plantel segue o **mapa ilustrado oficial** do zoo (incluído no app), mas as
+posições em `data/animais.json` são **aproximadas**. Três jeitos de corrigi-las:
 
-1. Caminhe até cada recinto com o app do mapa aberto e anote a coordenada; ou
-2. Peça o mapa georreferenciado à administração do zoológico (Fundação Jardim
-   Zoológico de Brasília).
-
-Basta editar o JSON — nenhuma mudança de código é necessária.
+1. **Modo 📌 Calibrar (recomendado)** — na aba Animais, ative o chip "📌 Calibrar",
+   fique em frente a cada recinto e toque em "📌 Aqui": o app grava sua posição
+   GPS como a posição do recinto (vale só naquele aparelho). Depois toque em
+   "📋 Copiar ajustes" e cole o JSON no `data/animais.json` para valer para todos.
+2. **Google Maps** — toque e segure sobre o recinto no Google Maps, copie a
+   latitude/longitude exibida e cole no JSON.
+3. Peça o mapa georreferenciado à administração (Fundação Jardim Zoológico
+   de Brasília).
 
 ## Limitações conhecidas do protótipo
 

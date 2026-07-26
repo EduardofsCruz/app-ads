@@ -1,8 +1,8 @@
 /* Service Worker do ZooGuia — deixa o app instalável e funcionando offline.
  * Estratégia: app shell em cache na instalação; tiles do mapa e CDN em cache dinâmico. */
 
-const CACHE_SHELL = "zooguia-shell-v1";
-const CACHE_DINAMICO = "zooguia-dinamico-v1";
+const CACHE_SHELL = "zooguia-shell-v3";
+const CACHE_DINAMICO = "zooguia-dinamico-v3";
 
 const ARQUIVOS_SHELL = [
   "./",
@@ -13,6 +13,7 @@ const ARQUIVOS_SHELL = [
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-maskable.svg",
+  "./img/mapa-ilustrado.png",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
 ];

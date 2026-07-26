@@ -1,20 +1,87 @@
 /* ZooGuia Brasília — protótipo PWA de navegação até os animais
- * Lista + mapa (Leaflet) + "Radar AR" com câmera, GPS e bússola. */
+ * Lista + favoritos + roteiro otimizado + mapa (Leaflet) + "Radar AR". */
 
 const estado = {
   animais: [],
+  servicos: [],
   zoo: null,
+  ajustes: {},          // {id: {lat, lng}} — posições calibradas em campo
+  modoCalibrar: false,
+  filtroApoio: false,
   posicao: null,        // {lat, lng, accuracy}
   heading: null,        // graus a partir do Norte (0-360)
   alvo: null,           // animal selecionado
+  favoritos: new Set(), // ids
+  filtroFavoritos: false,
+  selecaoRota: new Set(),   // ids marcados no planejamento
+  rota: { ordem: [], visitados: new Set() },
   mapa: null,
   marcadorUsuario: null,
   linhaRota: null,
+  camadaRoteiro: null,
   streamCamera: null,
   rafAR: null,
 };
 
 const RAIO_CHEGADA_M = 30; // distância para considerar "você chegou"
+
+// ---------- persistência local ----------
+function salvarLocal() {
+  try {
+    localStorage.setItem("zooguia.favoritos", JSON.stringify([...estado.favoritos]));
+    localStorage.setItem("zooguia.rota", JSON.stringify({
+      ordem: estado.rota.ordem.map((a) => a.id),
+      visitados: [...estado.rota.visitados],
+    }));
+  } catch { /* modo anônimo etc. */ }
+}
+
+function carregarLocal() {
+  try {
+    const fav = JSON.parse(localStorage.getItem("zooguia.favoritos") || "[]");
+    estado.favoritos = new Set(fav.filter((id) => porId(id)));
+    const rota = JSON.parse(localStorage.getItem("zooguia.rota") || "null");
+    if (rota && Array.isArray(rota.ordem)) {
+      estado.rota.ordem = rota.ordem.map(porId).filter(Boolean);
+      estado.rota.visitados = new Set((rota.visitados || []).filter((id) => porId(id)));
+      estado.selecaoRota = new Set(estado.rota.ordem.map((a) => a.id));
+    }
+  } catch { /* dados corrompidos: ignora */ }
+}
+
+function porId(id) {
+  return estado.animais.find((a) => a.id === id) || estado.servicos.find((s) => s.id === id);
+}
+
+// ---------- calibração dos recintos ----------
+function carregarAjustes() {
+  try {
+    estado.ajustes = JSON.parse(localStorage.getItem("zooguia.ajustes") || "{}");
+  } catch { estado.ajustes = {}; }
+  aplicarAjustes();
+}
+
+function aplicarAjustes() {
+  [...estado.animais, ...estado.servicos].forEach((p) => {
+    const aj = estado.ajustes[p.id];
+    if (aj && typeof aj.lat === "number" && typeof aj.lng === "number") {
+      p.lat = aj.lat;
+      p.lng = aj.lng;
+    }
+  });
+}
+
+function calibrarAqui(ponto) {
+  if (!estado.posicao) { toast("📡 Aguarde o GPS pegar sinal para calibrar."); return; }
+  if (estado.posicao.accuracy > 25) {
+    toast(`⚠️ Precisão do GPS ainda baixa (~${Math.round(estado.posicao.accuracy)} m). Gravei mesmo assim — repita se necessário.`);
+  }
+  estado.ajustes[ponto.id] = { lat: estado.posicao.lat, lng: estado.posicao.lng };
+  try { localStorage.setItem("zooguia.ajustes", JSON.stringify(estado.ajustes)); } catch {}
+  aplicarAjustes();
+  renderLista(document.getElementById("busca").value);
+  toast(`📌 Posição de "${ponto.nome}" gravada!`);
+}
 
 // ---------- util geográfico ----------
 function distanciaMetros(a, b) {
@@ -38,6 +105,45 @@ function rumoGraus(a, b) {
 
 function formataDist(m) {
   return m >= 1000 ? (m / 1000).toFixed(1) + " km" : Math.round(m) + " m";
+}
+
+// ---------- otimização da rota (caixeiro-viajante aproximado) ----------
+function custoRota(inicio, ordem) {
+  let total = 0, atual = inicio;
+  for (const p of ordem) { total += distanciaMetros(atual, p); atual = p; }
+  return total;
+}
+
+function melhorOrdem(inicio, pontos) {
+  // 1) vizinho mais próximo
+  const restantes = [...pontos];
+  const ordem = [];
+  let atual = inicio;
+  while (restantes.length) {
+    let idx = 0, menor = Infinity;
+    restantes.forEach((p, i) => {
+      const d = distanciaMetros(atual, p);
+      if (d < menor) { menor = d; idx = i; }
+    });
+    atual = restantes.splice(idx, 1)[0];
+    ordem.push(atual);
+  }
+  // 2) refinamento 2-opt: tenta desfazer cruzamentos invertendo trechos
+  let melhorou = true;
+  while (melhorou) {
+    melhorou = false;
+    for (let i = 0; i < ordem.length - 1; i++) {
+      for (let j = i + 1; j < ordem.length; j++) {
+        const nova = ordem.slice(0, i)
+          .concat(ordem.slice(i, j + 1).reverse(), ordem.slice(j + 1));
+        if (custoRota(inicio, nova) + 0.01 < custoRota(inicio, ordem)) {
+          ordem.splice(0, ordem.length, ...nova);
+          melhorou = true;
+        }
+      }
+    }
+  }
+  return ordem;
 }
 
 // ---------- toast ----------
@@ -73,25 +179,37 @@ function mostrarView(nome) {
 function renderLista(filtro = "") {
   const ul = document.getElementById("lista-animais");
   const f = filtro.trim().toLowerCase();
-  const itens = estado.animais
+  const base = estado.filtroApoio ? estado.servicos : estado.animais;
+  const itens = base
     .filter((a) => !f || a.nome.toLowerCase().includes(f) || a.area.toLowerCase().includes(f))
-    .map((a) => {
-      const d = estado.posicao ? distanciaMetros(estado.posicao, a) : null;
-      return { ...a, dist: d };
-    })
+    .filter((a) => estado.filtroApoio || !estado.filtroFavoritos || estado.favoritos.has(a.id))
+    .map((a) => ({ ...a, dist: estado.posicao ? distanciaMetros(estado.posicao, a) : null }))
     .sort((x, y) => (x.dist ?? Infinity) - (y.dist ?? Infinity));
 
+  if (!itens.length) {
+    ul.innerHTML = `<li class="lista-vazia">${estado.filtroFavoritos && !estado.filtroApoio
+      ? "Você ainda não favoritou nenhum animal. Toque na ⭐ dos seus preferidos!"
+      : "Nada encontrado."}</li>`;
+    return;
+  }
+
+  const ehApoio = estado.filtroApoio;
   ul.innerHTML = itens.map((a) => `
     <li class="animal-card">
+      ${ehApoio ? "" : `<button class="btn-fav ${estado.favoritos.has(a.id) ? "ativo" : ""}"
+              data-id="${a.id}" data-acao="favorito"
+              aria-label="Favoritar ${a.nome}">${estado.favoritos.has(a.id) ? "⭐" : "☆"}</button>`}
       <span class="animal-emoji">${a.emoji}</span>
       <div class="animal-info">
-        <div class="animal-nome">${a.nome}</div>
+        <div class="animal-nome">${a.nome} ${estado.ajustes[a.id] ? "📌" : ""}</div>
         <div class="animal-area">${a.area}</div>
         ${a.dist != null ? `<div class="animal-dist">📍 a ${formataDist(a.dist)} de você</div>` : ""}
       </div>
       <div class="animal-acoes">
-        <button class="btn-mini btn-mapa" data-id="${a.id}" data-acao="mapa">🗺️ Mapa</button>
-        <button class="btn-mini btn-ar" data-id="${a.id}" data-acao="ar">📸 AR</button>
+        ${estado.modoCalibrar
+          ? `<button class="btn-mini btn-calibrar" data-id="${a.id}" data-acao="calibrar">📌 Aqui</button>`
+          : `<button class="btn-mini btn-mapa" data-id="${a.id}" data-acao="mapa">🗺️ Mapa</button>
+             <button class="btn-mini btn-ar" data-id="${a.id}" data-acao="ar">📸 AR</button>`}
       </div>
     </li>`).join("");
 }
@@ -99,8 +217,19 @@ function renderLista(filtro = "") {
 document.getElementById("lista-animais").addEventListener("click", (ev) => {
   const btn = ev.target.closest("button[data-id]");
   if (!btn) return;
-  const animal = estado.animais.find((a) => a.id === btn.dataset.id);
+  const animal = porId(btn.dataset.id);
   if (!animal) return;
+  if (btn.dataset.acao === "favorito") {
+    if (estado.favoritos.has(animal.id)) estado.favoritos.delete(animal.id);
+    else estado.favoritos.add(animal.id);
+    salvarLocal();
+    renderLista(document.getElementById("busca").value);
+    return;
+  }
+  if (btn.dataset.acao === "calibrar") {
+    calibrarAqui(animal);
+    return;
+  }
   definirAlvo(animal);
   if (btn.dataset.acao === "mapa") {
     mostrarView("mapa");
@@ -113,11 +242,167 @@ document.getElementById("lista-animais").addEventListener("click", (ev) => {
 
 document.getElementById("busca").addEventListener("input", (ev) => renderLista(ev.target.value));
 
+document.getElementById("chip-todos").addEventListener("click", () => setFiltroLista("todos"));
+document.getElementById("chip-favoritos").addEventListener("click", () => setFiltroLista("favoritos"));
+document.getElementById("chip-apoio").addEventListener("click", () => setFiltroLista("apoio"));
+function setFiltroLista(modo) {
+  estado.filtroFavoritos = modo === "favoritos";
+  estado.filtroApoio = modo === "apoio";
+  document.getElementById("chip-todos").classList.toggle("active", modo === "todos");
+  document.getElementById("chip-favoritos").classList.toggle("active", modo === "favoritos");
+  document.getElementById("chip-apoio").classList.toggle("active", modo === "apoio");
+  renderLista(document.getElementById("busca").value);
+}
+
+document.getElementById("chip-calibrar").addEventListener("click", () => {
+  estado.modoCalibrar = !estado.modoCalibrar;
+  document.getElementById("chip-calibrar").classList.toggle("active", estado.modoCalibrar);
+  document.getElementById("calibrar-banner").classList.toggle("oculto", !estado.modoCalibrar);
+  renderLista(document.getElementById("busca").value);
+});
+
+document.getElementById("btn-exportar-ajustes").addEventListener("click", async () => {
+  const ids = Object.keys(estado.ajustes);
+  if (!ids.length) { toast("Nenhum recinto calibrado ainda."); return; }
+  const texto = JSON.stringify(estado.ajustes, null, 2);
+  try {
+    await navigator.clipboard.writeText(texto);
+    toast(`📋 ${ids.length} posição(ões) copiada(s)! Cole no data/animais.json para valer para todos.`);
+  } catch {
+    toast("Não consegui copiar automaticamente — o navegador bloqueou o acesso.");
+  }
+});
+
 function definirAlvo(animal) {
   estado.alvo = animal;
   document.getElementById("ar-alvo").textContent = `${animal.emoji} ${animal.nome}`;
   atualizarRota();
 }
+
+// ---------- roteiro (planejamento da visita) ----------
+function renderSelecao() {
+  const ul = document.getElementById("selecao-animais");
+  ul.innerHTML = estado.animais.map((a) => `
+    <li>
+      <label class="selecao-item ${estado.selecaoRota.has(a.id) ? "marcado" : ""}">
+        <input type="checkbox" data-id="${a.id}" ${estado.selecaoRota.has(a.id) ? "checked" : ""}>
+        <span class="animal-emoji-sm">${a.emoji}</span>
+        <span class="selecao-nome">${a.nome}</span>
+        <span class="selecao-area">${a.area}</span>
+        ${estado.favoritos.has(a.id) ? '<span class="selecao-fav">⭐</span>' : ""}
+      </label>
+    </li>`).join("");
+}
+
+document.getElementById("selecao-animais").addEventListener("change", (ev) => {
+  const cb = ev.target.closest("input[data-id]");
+  if (!cb) return;
+  if (cb.checked) estado.selecaoRota.add(cb.dataset.id);
+  else estado.selecaoRota.delete(cb.dataset.id);
+  cb.closest(".selecao-item").classList.toggle("marcado", cb.checked);
+});
+
+document.getElementById("btn-usar-favoritos").addEventListener("click", () => {
+  if (!estado.favoritos.size) { toast("Favorite alguns animais primeiro na aba 📋 ⭐"); return; }
+  estado.favoritos.forEach((id) => estado.selecaoRota.add(id));
+  renderSelecao();
+});
+
+document.getElementById("btn-limpar-selecao").addEventListener("click", () => {
+  estado.selecaoRota.clear();
+  renderSelecao();
+});
+
+document.getElementById("btn-montar-rota").addEventListener("click", () => {
+  const escolhidos = [...estado.selecaoRota].map(porId).filter(Boolean);
+  if (escolhidos.length < 2) { toast("Escolha pelo menos 2 animais para montar a rota 😉"); return; }
+  const inicio = estado.posicao || estado.zoo.entrada;
+  estado.rota.ordem = melhorOrdem(inicio, escolhidos);
+  estado.rota.visitados = new Set();
+  salvarLocal();
+  renderRoteiro();
+  desenharRoteiroNoMapa();
+  const primeiro = estado.rota.ordem[0];
+  definirAlvo(primeiro);
+  toast(`Rota pronta! Primeira parada: ${primeiro.emoji} ${primeiro.nome}`);
+});
+
+document.getElementById("btn-refazer-rota").addEventListener("click", () => {
+  estado.rota.ordem = [];
+  estado.rota.visitados = new Set();
+  salvarLocal();
+  if (estado.camadaRoteiro) estado.camadaRoteiro.clearLayers();
+  renderRoteiro();
+  renderSelecao();
+});
+
+document.getElementById("btn-rota-mapa").addEventListener("click", () => {
+  mostrarView("mapa");
+  desenharRoteiroNoMapa(true);
+});
+
+function proximaParada() {
+  return estado.rota.ordem.find((a) => !estado.rota.visitados.has(a.id)) || null;
+}
+
+function renderRoteiro() {
+  const temRota = estado.rota.ordem.length > 0;
+  document.getElementById("roteiro-selecao").classList.toggle("oculto", temRota);
+  document.getElementById("roteiro-resultado").classList.toggle("oculto", !temRota);
+  if (!temRota) return;
+
+  const inicio = estado.posicao || estado.zoo.entrada;
+  const total = custoRota(inicio, estado.rota.ordem);
+  const feitas = estado.rota.visitados.size;
+  const prox = proximaParada();
+  document.getElementById("rota-resumo").innerHTML = prox
+    ? `${estado.rota.ordem.length} paradas · ~${formataDist(total)} de caminhada · ${feitas} visitada${feitas === 1 ? "" : "s"}.<br>➡️ Próxima: <b>${prox.emoji} ${prox.nome}</b>`
+    : `🎉 Roteiro concluído! Vocês visitaram ${feitas} animais.`;
+
+  let anterior = inicio;
+  document.getElementById("rota-paradas").innerHTML = estado.rota.ordem.map((a, i) => {
+    const trecho = distanciaMetros(anterior, a);
+    anterior = a;
+    const visitado = estado.rota.visitados.has(a.id);
+    const ehProx = prox && prox.id === a.id;
+    return `
+      <li class="rota-item ${visitado ? "visitado" : ""} ${ehProx ? "proxima" : ""}">
+        <span class="rota-num">${i + 1}</span>
+        <span class="animal-emoji-sm">${a.emoji}</span>
+        <div class="rota-info">
+          <div class="rota-nome">${a.nome} ${ehProx ? "⬅️ próxima" : ""}</div>
+          <div class="rota-trecho">🚶 ${formataDist(trecho)} desde a parada anterior</div>
+        </div>
+        <div class="animal-acoes">
+          <button class="btn-mini btn-ar" data-id="${a.id}" data-acao="ar">📸 AR</button>
+          <button class="btn-mini ${visitado ? "btn-desfazer" : "btn-visitei"}"
+                  data-id="${a.id}" data-acao="visitado">${visitado ? "↩️ Desfazer" : "✅ Visitei"}</button>
+        </div>
+      </li>`;
+  }).join("");
+}
+
+document.getElementById("rota-paradas").addEventListener("click", (ev) => {
+  const btn = ev.target.closest("button[data-id]");
+  if (!btn) return;
+  const animal = porId(btn.dataset.id);
+  if (!animal) return;
+  if (btn.dataset.acao === "visitado") {
+    if (estado.rota.visitados.has(animal.id)) estado.rota.visitados.delete(animal.id);
+    else estado.rota.visitados.add(animal.id);
+    salvarLocal();
+    renderRoteiro();
+    const prox = proximaParada();
+    if (prox) { definirAlvo(prox); toast(`➡️ Próxima parada: ${prox.emoji} ${prox.nome}`); }
+    else if (estado.rota.visitados.size === estado.rota.ordem.length) {
+      toast("🎉 Roteiro concluído! Parabéns, exploradores!");
+    }
+    return;
+  }
+  definirAlvo(animal);
+  mostrarView("ar");
+  iniciarAR();
+});
 
 // ---------- GPS ----------
 function iniciarGPS() {
@@ -206,7 +491,45 @@ function iniciarMapa() {
       .bindPopup(`<b>${a.emoji} ${a.nome}</b><br>${a.area}<br><i>${a.curiosidade}</i>`)
       .on("click", () => definirAlvo(a));
   });
+
+  estado.servicos.forEach((s) => {
+    const icone = L.divIcon({
+      className: "",
+      html: `<div class="marcador-servico">${s.emoji}</div>`,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+    });
+    L.marker([s.lat, s.lng], { icon: icone })
+      .addTo(estado.mapa)
+      .bindPopup(`<b>${s.emoji} ${s.nome}</b>`);
+  });
+
+  estado.camadaRoteiro = L.layerGroup().addTo(estado.mapa);
+  if (estado.rota.ordem.length) desenharRoteiroNoMapa();
 }
+
+// alternância mapa GPS x mapa ilustrado oficial
+function setMapaIlustrado(ilustrado) {
+  document.getElementById("mapa").classList.toggle("oculto", ilustrado);
+  document.getElementById("mapa-ilustrado").classList.toggle("oculto", !ilustrado);
+  document.getElementById("mapa-destino").classList.toggle("some", ilustrado);
+  document.getElementById("btn-mapa-gps").classList.toggle("active", !ilustrado);
+  document.getElementById("btn-mapa-ilustrado").classList.toggle("active", ilustrado);
+  if (!ilustrado && estado.mapa) setTimeout(() => estado.mapa.invalidateSize(), 60);
+}
+document.getElementById("btn-mapa-gps").addEventListener("click", () => setMapaIlustrado(false));
+document.getElementById("btn-mapa-ilustrado").addEventListener("click", () => setMapaIlustrado(true));
+
+let zoomIlustrado = 160; // largura da imagem em % do contêiner
+function aplicarZoomIlustrado() {
+  document.getElementById("img-ilustrado").style.width = zoomIlustrado + "%";
+}
+document.getElementById("btn-zoom-mais").addEventListener("click", () => {
+  zoomIlustrado = Math.min(400, zoomIlustrado + 40); aplicarZoomIlustrado();
+});
+document.getElementById("btn-zoom-menos").addEventListener("click", () => {
+  zoomIlustrado = Math.max(100, zoomIlustrado - 40); aplicarZoomIlustrado();
+});
 
 function atualizarUsuarioNoMapa() {
   if (!estado.mapa || !estado.posicao) return;
@@ -224,6 +547,26 @@ function focarNoMapa(animal) {
   if (!estado.mapa) return;
   estado.mapa.setView([animal.lat, animal.lng], 18);
   atualizarRota();
+}
+
+function desenharRoteiroNoMapa(enquadrar = false) {
+  if (!estado.mapa || !estado.camadaRoteiro || !estado.rota.ordem.length) return;
+  estado.camadaRoteiro.clearLayers();
+  const inicio = estado.posicao || estado.zoo.entrada;
+  const pontos = [[inicio.lat, inicio.lng], ...estado.rota.ordem.map((a) => [a.lat, a.lng])];
+  L.polyline(pontos, { color: "#6a1b9a", weight: 5, opacity: 0.85 }).addTo(estado.camadaRoteiro);
+  estado.rota.ordem.forEach((a, i) => {
+    const visitado = estado.rota.visitados.has(a.id);
+    L.marker([a.lat, a.lng], {
+      icon: L.divIcon({
+        className: "",
+        html: `<div class="marcador-num ${visitado ? "marcador-ok" : ""}">${visitado ? "✓" : i + 1}</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      }),
+    }).addTo(estado.camadaRoteiro);
+  });
+  if (enquadrar) estado.mapa.fitBounds(pontos, { padding: [40, 40] });
 }
 
 function atualizarRota() {
@@ -376,7 +719,13 @@ async function boot() {
   const dados = await resp.json();
   estado.zoo = dados.zoo;
   estado.animais = dados.animais;
+  estado.servicos = dados.servicos || [];
+  carregarAjustes();
+  carregarLocal();
   renderLista();
+  aplicarZoomIlustrado();
+  renderSelecao();
+  renderRoteiro();
   try { iniciarMapa(); } catch (e) { console.warn("Mapa indisponível:", e); }
   iniciarGPS();
   iniciarBussola();

@@ -66,6 +66,28 @@ main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 }
 #busca:focus { outline: none; border-color: var(--verde-claro); }
 
+.chips {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px 0;
+  flex-wrap: wrap;
+}
+.chip {
+  border: 2px solid #cfe3cf;
+  background: #fff;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #3c503c;
+  cursor: pointer;
+}
+.chip.active {
+  background: var(--verde-claro);
+  border-color: var(--verde-claro);
+  color: #fff;
+}
+
 .gps-banner {
   margin: 8px 16px;
   padding: 8px 12px;
@@ -92,6 +114,22 @@ main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 .animal-emoji { font-size: 2.2rem; }
+.animal-emoji-sm { font-size: 1.5rem; }
+.btn-fav {
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  filter: grayscale(1) opacity(0.5);
+}
+.btn-fav.ativo { filter: none; }
+.lista-vazia {
+  text-align: center;
+  padding: 32px 16px;
+  color: #5a6e5a;
+}
 .animal-info { flex: 1; min-width: 0; }
 .animal-nome { font-weight: 700; font-size: 1.05rem; }
 .animal-area { font-size: 0.8rem; color: #5a6e5a; }
@@ -108,8 +146,109 @@ main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .btn-mapa { background: #e3f2fd; color: #0d47a1; }
 .btn-ar { background: #fff3e0; color: #e65100; }
 
+/* ---- Roteiro ---- */
+.roteiro-wrap {
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+}
+.roteiro-wrap h2 { margin-bottom: 6px; }
+.roteiro-texto { font-size: 0.9rem; color: #4a5e4a; margin-bottom: 10px; }
+.roteiro-wrap .chips { padding: 0 0 10px; }
+
+.selecao-list {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.selecao-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.selecao-item.marcado { border-color: var(--verde-claro); background: #eef8ee; }
+.selecao-item input { width: 20px; height: 20px; accent-color: var(--verde-claro); }
+.selecao-nome { font-weight: 700; }
+.selecao-area { font-size: 0.75rem; color: #5a6e5a; flex: 1; }
+
+.rota-list {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+.rota-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 2px solid transparent;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+.rota-item.proxima { border-color: var(--amarelo); background: #fffbe8; }
+.rota-item.visitado { opacity: 0.55; }
+.rota-item.visitado .rota-nome { text-decoration: line-through; }
+.rota-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--verde);
+  color: #fff;
+  font-weight: 800;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+}
+.rota-info { flex: 1; min-width: 0; }
+.rota-nome { font-weight: 700; }
+.rota-trecho { font-size: 0.78rem; color: #5a6e5a; }
+.btn-visitei { background: #e8f5e9; color: #1b5e20; }
+.btn-desfazer { background: #eceff1; color: #37474f; }
+.rota-acoes { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.marcador-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #6a1b9a;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: grid;
+  place-content: center;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.marcador-num.marcador-ok { background: #2e7d32; }
+
 /* ---- Mapa ---- */
+.mapa-toggle { padding-bottom: 8px; background: var(--fundo); }
 #mapa { flex: 1; min-height: 0; z-index: 1; }
+.mapa-ilustrado { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.ilustrado-zoom { display: flex; gap: 8px; padding: 0 16px 8px; }
+.ilustrado-scroll { flex: 1; overflow: auto; background: #dcedc8; }
+#img-ilustrado { width: 160%; max-width: none; display: block; }
+.marcador-servico {
+  font-size: 18px;
+  background: #fff;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-content: center;
+  border: 2px solid #90a4ae;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+}
+.btn-calibrar { background: #ede7f6; color: #4527a0; }
+.some { display: none !important; }
 .destino-card {
   position: absolute;
   left: 12px;

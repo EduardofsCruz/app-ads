@@ -21,8 +21,9 @@
 
   <nav class="tabs" role="tablist">
     <button class="tab active" data-view="lista" role="tab" aria-selected="true">📋 Animais</button>
+    <button class="tab" data-view="roteiro" role="tab" aria-selected="false">🧭 Roteiro</button>
     <button class="tab" data-view="mapa" role="tab" aria-selected="false">🗺️ Mapa</button>
-    <button class="tab" data-view="ar" role="tab" aria-selected="false">📸 Radar AR</button>
+    <button class="tab" data-view="ar" role="tab" aria-selected="false">📸 AR</button>
   </nav>
 
   <main>
@@ -31,13 +32,58 @@
       <div class="search-wrap">
         <input id="busca" type="search" placeholder="Buscar animal… ex.: leão, arara" autocomplete="off">
       </div>
+      <div class="chips">
+        <button id="chip-todos" class="chip active">Todos</button>
+        <button id="chip-favoritos" class="chip">⭐ Favoritos</button>
+        <button id="chip-apoio" class="chip">🚻 Apoio</button>
+        <button id="chip-calibrar" class="chip">📌 Calibrar</button>
+      </div>
+      <div id="calibrar-banner" class="gps-banner oculto">📌 <b>Modo calibração:</b> fique em frente ao recinto e toque em "📌 Aqui" para gravar a posição real. <button id="btn-exportar-ajustes" class="btn-mini btn-mapa">📋 Copiar ajustes</button></div>
       <div id="status-gps" class="gps-banner">📡 Ativando GPS…</div>
       <ul id="lista-animais" class="animal-list"></ul>
     </section>
 
+    <!-- Roteiro / planejamento da visita -->
+    <section id="view-roteiro" class="view">
+      <div class="roteiro-wrap">
+        <div id="roteiro-selecao">
+          <h2>🧭 Planeje sua visita</h2>
+          <p class="roteiro-texto">Marque os animais que vocês querem ver. O app calcula a melhor ordem de visita, começando da entrada — ou de onde você estiver, se o GPS estiver ligado.</p>
+          <div class="chips">
+            <button id="btn-usar-favoritos" class="chip">⭐ Usar meus favoritos</button>
+            <button id="btn-limpar-selecao" class="chip">Limpar</button>
+          </div>
+          <ul id="selecao-animais" class="selecao-list"></ul>
+          <button id="btn-montar-rota" class="btn-primario">🧭 Montar melhor rota</button>
+        </div>
+        <div id="roteiro-resultado" class="oculto">
+          <h2>🗺️ Sua rota ideal</h2>
+          <p id="rota-resumo" class="roteiro-texto"></p>
+          <ol id="rota-paradas" class="rota-list"></ol>
+          <div class="rota-acoes">
+            <button id="btn-rota-mapa" class="btn-primario">Ver no mapa</button>
+            <button id="btn-refazer-rota" class="chip">✏️ Refazer seleção</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Mapa -->
     <section id="view-mapa" class="view">
+      <div class="mapa-toggle chips">
+        <button id="btn-mapa-gps" class="chip active">🛰️ Mapa GPS</button>
+        <button id="btn-mapa-ilustrado" class="chip">🎨 Mapa ilustrado</button>
+      </div>
       <div id="mapa"></div>
+      <div id="mapa-ilustrado" class="mapa-ilustrado oculto">
+        <div class="ilustrado-zoom">
+          <button id="btn-zoom-menos" class="chip">➖</button>
+          <button id="btn-zoom-mais" class="chip">➕</button>
+        </div>
+        <div class="ilustrado-scroll">
+          <img id="img-ilustrado" src="img/mapa-ilustrado.png" alt="Mapa ilustrado oficial do Zoológico de Brasília">
+        </div>
+      </div>
       <div id="mapa-destino" class="destino-card oculto"></div>
     </section>
 
