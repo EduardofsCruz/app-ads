@@ -1,0 +1,30 @@
+{
+  "zoo": {
+    "nome": "Jardim Zoológico de Brasília",
+    "centro": { "lat": -15.8497, "lng": -47.9381 },
+    "entrada": { "lat": -15.8442, "lng": -47.9375 },
+    "aviso": "As coordenadas dos recintos são aproximadas e servem como demonstração. Ajuste-as caminhando pelo zoo com o GPS aberto ou com apoio da administração do zoológico."
+  },
+  "animais": [
+    { "id": "leao", "nome": "Leão", "emoji": "🦁", "area": "Setor de Felinos", "lat": -15.8478, "lng": -47.9394, "curiosidade": "O rugido de um leão pode ser ouvido a até 8 km de distância." },
+    { "id": "onca", "nome": "Onça-pintada", "emoji": "🐆", "area": "Setor de Felinos", "lat": -15.8482, "lng": -47.9399, "curiosidade": "Maior felino das Américas e símbolo do Cerrado brasileiro." },
+    { "id": "tigre", "nome": "Tigre", "emoji": "🐯", "area": "Setor de Felinos", "lat": -15.8475, "lng": -47.9390, "curiosidade": "Cada tigre tem um padrão de listras único, como uma impressão digital." },
+    { "id": "elefante", "nome": "Elefante", "emoji": "🐘", "area": "Grandes Mamíferos", "lat": -15.8503, "lng": -47.9402, "curiosidade": "A elefanta Bem-Vinda é uma das moradoras mais famosas do Zoo de Brasília." },
+    { "id": "girafa", "nome": "Girafa", "emoji": "🦒", "area": "Grandes Mamíferos", "lat": -15.8508, "lng": -47.9395, "curiosidade": "Mesmo com aquele pescoço enorme, a girafa tem só 7 vértebras cervicais, igual a nós." },
+    { "id": "hipopotamo", "nome": "Hipopótamo", "emoji": "🦛", "area": "Grandes Mamíferos", "lat": -15.8512, "lng": -47.9388, "curiosidade": "Passa até 16 horas por dia dentro da água para se proteger do sol." },
+    { "id": "macaco", "nome": "Macaco-prego", "emoji": "🐒", "area": "Setor de Primatas", "lat": -15.8489, "lng": -47.9371, "curiosidade": "Usa pedras como ferramentas para quebrar cocos e castanhas." },
+    { "id": "mico", "nome": "Mico-leão", "emoji": "🐵", "area": "Setor de Primatas", "lat": -15.8492, "lng": -47.9368, "curiosidade": "Já esteve quase extinto; hoje é um símbolo da conservação brasileira." },
+    { "id": "arara", "nome": "Arara-canindé", "emoji": "🦜", "area": "Aves", "lat": -15.8470, "lng": -47.9377, "curiosidade": "Araras escolhem um parceiro para a vida toda." },
+    { "id": "tucano", "nome": "Tucano-toco", "emoji": "🦤", "area": "Aves", "lat": -15.8468, "lng": -47.9381, "curiosidade": "O bico enorme é leve e cheio de ar, e ainda ajuda a regular a temperatura." },
+    { "id": "ema", "nome": "Ema", "emoji": "🪶", "area": "Aves do Cerrado", "lat": -15.8520, "lng": -47.9375, "curiosidade": "É a maior ave do Brasil e pode correr a 60 km/h." },
+    { "id": "tamandua", "nome": "Tamanduá-bandeira", "emoji": "🐜", "area": "Fauna do Cerrado", "lat": -15.8515, "lng": -47.9368, "curiosidade": "Come até 30 mil formigas e cupins por dia com sua língua de 60 cm." },
+    { "id": "lobo", "nome": "Lobo-guará", "emoji": "🐺", "area": "Fauna do Cerrado", "lat": -15.8518, "lng": -47.9362, "curiosidade": "O lobo da nota de 200 reais! Suas pernas longas ajudam a enxergar por cima do capim do Cerrado." },
+    { "id": "jacare", "nome": "Jacaré", "emoji": "🐊", "area": "Répteis", "lat": -15.8460, "lng": -47.9390, "curiosidade": "A temperatura do ninho define se os filhotes nascem machos ou fêmeas." },
+    { "id": "jiboia", "nome": "Jiboia", "emoji": "🐍", "area": "Répteis", "lat": -15.8458, "lng": -47.9386, "curiosidade": "Não é venenosa: ela abraça a presa para caçar." },
+    { "id": "tartaruga", "nome": "Tartaruga", "emoji": "🐢", "area": "Répteis", "lat": -15.8456, "lng": -47.9382, "curiosidade": "Algumas tartarugas vivem mais de 100 anos." },
+    { "id": "urso", "nome": "Urso", "emoji": "🐻", "area": "Grandes Mamíferos", "lat": -15.8500, "lng": -47.9408, "curiosidade": "O olfato de um urso é milhares de vezes mais apurado que o nosso." },
+    { "id": "zebra", "nome": "Zebra", "emoji": "🦓", "area": "Savana", "lat": -15.8506, "lng": -47.9380, "curiosidade": "Cada zebra tem um padrão de listras único no mundo." },
+    { "id": "avestruz", "nome": "Avestruz", "emoji": "🪿", "area": "Savana", "lat": -15.8510, "lng": -47.9377, "curiosidade": "É a maior ave do mundo e bota o maior ovo entre todas as aves." },
+    { "id": "flamingo", "nome": "Flamingo", "emoji": "🦩", "area": "Lago das Aves", "lat": -15.8465, "lng": -47.9372, "curiosidade": "A cor rosa vem dos pigmentos dos pequenos crustáceos que ele come." }
+  ]
+}

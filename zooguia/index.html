@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b5e20">
+  <meta name="description" content="Encontre os animais do Zoológico de Brasília com GPS e realidade aumentada.">
+  <title>ZooGuia Brasília 🦁</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>🦁 ZooGuia Brasília</h1>
+    <p class="subtitle">Encontre os animais sem se perder</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="lista" role="tab" aria-selected="true">📋 Animais</button>
+    <button class="tab" data-view="mapa" role="tab" aria-selected="false">🗺️ Mapa</button>
+    <button class="tab" data-view="ar" role="tab" aria-selected="false">📸 Radar AR</button>
+  </nav>
+
+  <main>
+    <!-- Lista de animais -->
+    <section id="view-lista" class="view active">
+      <div class="search-wrap">
+        <input id="busca" type="search" placeholder="Buscar animal… ex.: leão, arara" autocomplete="off">
+      </div>
+      <div id="status-gps" class="gps-banner">📡 Ativando GPS…</div>
+      <ul id="lista-animais" class="animal-list"></ul>
+    </section>
+
+    <!-- Mapa -->
+    <section id="view-mapa" class="view">
+      <div id="mapa"></div>
+      <div id="mapa-destino" class="destino-card oculto"></div>
+    </section>
+
+    <!-- Radar AR (estilo Pokémon GO) -->
+    <section id="view-ar" class="view">
+      <div id="ar-intro" class="ar-intro">
+        <h2>📸 Radar AR</h2>
+        <p>Escolha um animal na lista, aponte a câmera para o zoo e siga a seta até chegar ao recinto — igual a caçar Pokémon!</p>
+        <p class="ar-nota">Precisa de permissão de <strong>câmera</strong>, <strong>GPS</strong> e <strong>bússola</strong>.</p>
+        <button id="btn-iniciar-ar" class="btn-primario">Iniciar câmera</button>
+      </div>
+      <div id="ar-stage" class="ar-stage oculto">
+        <video id="ar-video" autoplay muted playsinline></video>
+        <canvas id="ar-canvas"></canvas>
+        <div id="ar-hud" class="ar-hud">
+          <div id="ar-alvo" class="ar-alvo">Nenhum animal selecionado</div>
+          <div id="ar-distancia" class="ar-distancia"></div>
+        </div>
+        <div id="ar-encontrado" class="ar-encontrado oculto">
+          <div class="ar-emoji"></div>
+          <div class="ar-msg">Você chegou! 🎉</div>
+        </div>
+        <button id="btn-parar-ar" class="btn-fechar-ar" aria-label="Fechar câmera">✕</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast oculto"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
