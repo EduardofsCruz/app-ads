@@ -71,16 +71,39 @@ function aplicarAjustes() {
   });
 }
 
+function extrairCoordenada(texto) {
+  // aceita "-15.84726, -47.93815" (copiar do Google Maps) ou URLs com @lat,lng
+  const m = String(texto || "").match(/(-?\d{1,3}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})/);
+  if (!m) return null;
+  const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng };
+}
+
+function salvarAjuste(ponto, coord, origem) {
+  estado.ajustes[ponto.id] = coord;
+  try { localStorage.setItem("zooguia.ajustes", JSON.stringify(estado.ajustes)); } catch {}
+  aplicarAjustes();
+  renderLista(document.getElementById("busca").value);
+  toast(`📌 Posição de "${ponto.nome}" gravada ${origem}!`);
+}
+
+function colarCoordenada(ponto) {
+  const texto = window.prompt(
+    `Cole a coordenada de "${ponto.nome}" copiada do Google Maps\n(toque e segure no recinto no Google Maps e copie o número que aparece, ex.: -15.84726, -47.93815):`
+  );
+  if (texto == null) return;
+  const coord = extrairCoordenada(texto);
+  if (!coord) { toast("Não reconheci a coordenada 😕 — cole algo como -15.84726, -47.93815"); return; }
+  salvarAjuste(ponto, coord, "a partir do Google Maps");
+}
+
 function calibrarAqui(ponto) {
   if (!estado.posicao) { toast("📡 Aguarde o GPS pegar sinal para calibrar."); return; }
   if (estado.posicao.accuracy > 25) {
     toast(`⚠️ Precisão do GPS ainda baixa (~${Math.round(estado.posicao.accuracy)} m). Gravei mesmo assim — repita se necessário.`);
   }
-  estado.ajustes[ponto.id] = { lat: estado.posicao.lat, lng: estado.posicao.lng };
-  try { localStorage.setItem("zooguia.ajustes", JSON.stringify(estado.ajustes)); } catch {}
-  aplicarAjustes();
-  renderLista(document.getElementById("busca").value);
-  toast(`📌 Posição de "${ponto.nome}" gravada!`);
+  salvarAjuste(ponto, { lat: estado.posicao.lat, lng: estado.posicao.lng }, "com o GPS");
 }
 
 // ---------- util geográfico ----------
@@ -207,7 +230,8 @@ function renderLista(filtro = "") {
       </div>
       <div class="animal-acoes">
         ${estado.modoCalibrar
-          ? `<button class="btn-mini btn-calibrar" data-id="${a.id}" data-acao="calibrar">📌 Aqui</button>`
+          ? `<button class="btn-mini btn-calibrar" data-id="${a.id}" data-acao="calibrar">📌 Aqui</button>
+             <button class="btn-mini btn-colar" data-id="${a.id}" data-acao="colar">🌐 Colar</button>`
           : `<button class="btn-mini btn-mapa" data-id="${a.id}" data-acao="mapa">🗺️ Mapa</button>
              <button class="btn-mini btn-ar" data-id="${a.id}" data-acao="ar">📸 AR</button>`}
       </div>
@@ -228,6 +252,10 @@ document.getElementById("lista-animais").addEventListener("click", (ev) => {
   }
   if (btn.dataset.acao === "calibrar") {
     calibrarAqui(animal);
+    return;
+  }
+  if (btn.dataset.acao === "colar") {
+    colarCoordenada(animal);
     return;
   }
   definirAlvo(animal);

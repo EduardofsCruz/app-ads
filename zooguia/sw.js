@@ -1,8 +1,8 @@
 /* Service Worker do ZooGuia — deixa o app instalável e funcionando offline.
  * Estratégia: app shell em cache na instalação; tiles do mapa e CDN em cache dinâmico. */
 
-const CACHE_SHELL = "zooguia-shell-v3";
-const CACHE_DINAMICO = "zooguia-dinamico-v3";
+const CACHE_SHELL = "zooguia-shell-v4";
+const CACHE_DINAMICO = "zooguia-dinamico-v4";
 
 const ARQUIVOS_SHELL = [
   "./",

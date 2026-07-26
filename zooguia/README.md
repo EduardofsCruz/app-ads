@@ -72,8 +72,10 @@ posições em `data/animais.json` são **aproximadas**. Três jeitos de corrigi-
    fique em frente a cada recinto e toque em "📌 Aqui": o app grava sua posição
    GPS como a posição do recinto (vale só naquele aparelho). Depois toque em
    "📋 Copiar ajustes" e cole o JSON no `data/animais.json` para valer para todos.
-2. **Google Maps** — toque e segure sobre o recinto no Google Maps, copie a
-   latitude/longitude exibida e cole no JSON.
+2. **Google Maps** — os recintos já aparecem marcados no Google Maps
+   (Elefante, Hipopótamos, Onças-pintadas…). Toque e segure sobre o recinto,
+   copie a coordenada exibida e, no modo Calibrar do app, toque em "🌐 Colar"
+   no animal correspondente. Sem editar arquivo nenhum.
 3. Peça o mapa georreferenciado à administração (Fundação Jardim Zoológico
    de Brasília).
 
