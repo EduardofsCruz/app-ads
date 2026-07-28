@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escola Cantinho da Criança — Venha nos conhecer!</title>
+</head>
+<body>
+<style>
+  :root{
+    --papel:#FFF8EF;          /* fundo creme quente com viés de pêssego */
+    --cartao:#FFFFFF;
+    --tinta:#43325A;          /* ameixa escura para texto */
+    --tinta-suave:#6E5E85;
+    --sol:#FFB703;            /* amarelo sol */
+    --coral:#FF6B6B;          /* coral */
+    --mar:#0E9E9E;            /* verde-água (accent principal) */
+    --mar-escuro:#0B7F7F;
+    --uva:#8A6FD1;            /* lilás de apoio */
+    --linha:#F0E4D2;
+    --sombra:0 10px 30px rgba(67,50,90,.10);
+    --raio:22px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --papel:#221C2E;
+      --cartao:#2C2440;
+      --tinta:#F4EEFF;
+      --tinta-suave:#BDB0D6;
+      --sol:#FFC53D;
+      --coral:#FF8585;
+      --mar:#2FC4C4;
+      --mar-escuro:#28AFAF;
+      --uva:#A78BF0;
+      --linha:#3A3153;
+      --sombra:0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --papel:#221C2E; --cartao:#2C2440; --tinta:#F4EEFF; --tinta-suave:#BDB0D6;
+    --sol:#FFC53D; --coral:#FF8585; --mar:#2FC4C4; --mar-escuro:#28AFAF;
+    --uva:#A78BF0; --linha:#3A3153; --sombra:0 10px 30px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"]{
+    --papel:#FFF8EF; --cartao:#FFFFFF; --tinta:#43325A; --tinta-suave:#6E5E85;
+    --sol:#FFB703; --coral:#FF6B6B; --mar:#0E9E9E; --mar-escuro:#0B7F7F;
+    --uva:#8A6FD1; --linha:#F0E4D2; --sombra:0 10px 30px rgba(67,50,90,.10);
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *, *::before, *::after{animation:none !important; transition:none !important;}
+  }
+  body{
+    background:var(--papel);
+    color:var(--tinta);
+    font-family:"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size:17px; line-height:1.65;
+    overflow-x:hidden;
+  }
+  .display{
+    font-family:ui-rounded, "Hiragino Maru Gothic ProN", Quicksand, Comfortaa,
+      "Arial Rounded MT Bold", "Segoe UI", sans-serif;
+    font-weight:800; line-height:1.15; text-wrap:balance;
+  }
+  a{color:var(--mar-escuro);}
+  img{max-width:100%;}
+  .wrap{max-width:1100px; margin:0 auto; padding:0 24px;}
+  section{padding:72px 0;}
+  .eyebrow{
+    display:inline-block; font-size:.78rem; font-weight:700; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--mar-escuro);
+    background:color-mix(in srgb, var(--mar) 14%, transparent);
+    padding:6px 14px; border-radius:999px; margin-bottom:14px;
+  }
+  h2.display{font-size:clamp(1.7rem, 3.5vw, 2.4rem); margin-bottom:14px;}
+  .lead{color:var(--tinta-suave); max-width:62ch;}
+
+  /* ---------- barra superior ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:color-mix(in srgb, var(--papel) 88%, transparent);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--linha);
+  }
+  .nav{display:flex; align-items:center; gap:28px; padding:14px 24px; max-width:1100px; margin:0 auto;}
+  .logo{display:flex; align-items:center; gap:10px; font-size:1.12rem; text-decoration:none; color:var(--tinta);}
+  .logo-mark{
+    width:38px; height:38px; border-radius:50%;
+    background:conic-gradient(var(--sol) 0 25%, var(--coral) 0 50%, var(--mar) 0 75%, var(--uva) 0);
+    display:grid; place-items:center; flex:none;
+  }
+  .logo-mark span{width:16px; height:16px; background:var(--papel); border-radius:50%;}
+  .nav-links{display:flex; gap:22px; margin-left:auto; list-style:none;}
+  .nav-links a{text-decoration:none; color:var(--tinta-suave); font-weight:600; font-size:.95rem;}
+  .nav-links a:hover, .nav-links a:focus-visible{color:var(--mar-escuro);}
+  .btn{
+    display:inline-block; border:none; cursor:pointer; text-decoration:none;
+    font-weight:700; font-size:1rem; border-radius:999px; padding:13px 26px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:focus-visible{outline:3px solid var(--uva); outline-offset:2px;}
+  .btn-sol{background:var(--sol); color:#4A3200; box-shadow:0 6px 0 color-mix(in srgb, var(--sol) 60%, #8a5a00);}
+  .btn-sol:hover{transform:translateY(-2px);}
+  .btn-mar{background:var(--mar); color:#fff; box-shadow:0 6px 0 var(--mar-escuro);}
+  .btn-mar:hover{transform:translateY(-2px);}
+  .btn-linha{background:transparent; color:var(--tinta); border:2px solid var(--linha);}
+  .nav .btn{padding:9px 20px; font-size:.9rem;}
+  @media (max-width:820px){ .nav-links{display:none;} }
+
+  /* ---------- herói ---------- */
+  .hero{position:relative; padding:84px 0 110px; overflow:hidden;}
+  .hero .wrap{display:grid; grid-template-columns:1.15fr .85fr; gap:48px; align-items:center;}
+  @media (max-width:820px){ .hero .wrap{grid-template-columns:1fr;} }
+  .hero h1{font-size:clamp(2.3rem, 5.4vw, 3.6rem); margin-bottom:18px;}
+  .hero h1 em{font-style:normal; color:var(--mar-escuro); position:relative; white-space:nowrap;}
+  .hero h1 em svg{position:absolute; left:0; bottom:-10px; width:100%; height:14px;}
+  .hero p{font-size:1.13rem; color:var(--tinta-suave); max-width:52ch; margin-bottom:30px;}
+  .hero-ctas{display:flex; gap:14px; flex-wrap:wrap;}
+  .hero-note{margin-top:18px; font-size:.88rem; color:var(--tinta-suave);}
+
+  .hero-art{position:relative; min-height:340px;}
+  .blob{position:absolute; border-radius:50%;}
+  .blob.sol{width:230px; height:230px; background:var(--sol); top:8%; right:12%;
+    border-radius:58% 42% 55% 45% / 50% 55% 45% 50%; animation:flutua 7s ease-in-out infinite;}
+  .blob.mar{width:150px; height:150px; background:var(--mar); bottom:6%; left:4%;
+    border-radius:45% 55% 48% 52% / 55% 45% 55% 45%; animation:flutua 9s ease-in-out infinite reverse;}
+  .blob.coral{width:95px; height:95px; background:var(--coral); top:0; left:22%;
+    animation:flutua 6s ease-in-out infinite;}
+  .blob.uva{width:60px; height:60px; background:var(--uva); bottom:26%; right:2%;
+    animation:flutua 8s ease-in-out infinite;}
+  .hero-card{
+    position:relative; z-index:2; background:var(--cartao); border-radius:var(--raio);
+    box-shadow:var(--sombra); padding:26px; width:min(320px, 90%);
+    margin:60px auto 0; transform:rotate(-2deg); border:1px solid var(--linha);
+  }
+  .hero-card strong{display:block; font-size:1.05rem; margin-bottom:6px;}
+  .hero-card small{color:var(--tinta-suave);}
+  .hero-card .faixa{
+    display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;
+  }
+  .hero-card .faixa span{
+    font-size:.78rem; font-weight:700; padding:5px 12px; border-radius:999px;
+  }
+  .faixa .f1{background:color-mix(in srgb, var(--sol) 25%, transparent); color:var(--tinta);}
+  .faixa .f2{background:color-mix(in srgb, var(--mar) 20%, transparent); color:var(--tinta);}
+  .faixa .f3{background:color-mix(in srgb, var(--coral) 22%, transparent); color:var(--tinta);}
+  @keyframes flutua{
+    0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)}
+  }
+
+  /* onda divisória */
+  .onda{display:block; width:100%; height:70px; margin-bottom:-1px;}
+
+  /* ---------- destaques ---------- */
+  .destaques{background:var(--mar); color:#fff; padding:34px 0;}
+  :root[data-theme="dark"] .destaques, .tema-escuro-ok{color:#fff;}
+  .destaques .wrap{display:grid; grid-template-columns:repeat(4,1fr); gap:20px; text-align:center;}
+  @media (max-width:820px){ .destaques .wrap{grid-template-columns:repeat(2,1fr);} }
+  .destaques strong{display:block; font-size:1.45rem; font-variant-numeric:tabular-nums;}
+  .destaques span{font-size:.9rem; opacity:.92;}
+
+  /* ---------- sobre ---------- */
+  .sobre .wrap{display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center;}
+  @media (max-width:820px){ .sobre .wrap{grid-template-columns:1fr;} }
+  .sobre-foto{
+    aspect-ratio:4/3; border-radius:var(--raio);
+    background:
+      radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--sol) 55%, transparent), transparent 60%),
+      radial-gradient(circle at 75% 70%, color-mix(in srgb, var(--coral) 45%, transparent), transparent 55%),
+      linear-gradient(135deg, color-mix(in srgb, var(--mar) 35%, var(--papel)), color-mix(in srgb, var(--uva) 30%, var(--papel)));
+    display:grid; place-items:center; color:var(--tinta-suave);
+    font-weight:600; border:2px dashed color-mix(in srgb, var(--tinta) 25%, transparent);
+  }
+  .sobre ul{list-style:none; margin-top:22px; display:grid; gap:12px;}
+  .sobre li{display:flex; gap:12px; align-items:flex-start;}
+  .check{
+    flex:none; width:26px; height:26px; border-radius:50%; background:var(--sol);
+    display:grid; place-items:center; margin-top:2px;
+  }
+  .check svg{width:14px; height:14px; stroke:#4A3200; stroke-width:3; fill:none;}
+
+  /* ---------- turmas ---------- */
+  .turmas{background:color-mix(in srgb, var(--sol) 7%, var(--papel));}
+  .turmas-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:40px;}
+  @media (max-width:820px){ .turmas-grid{grid-template-columns:1fr;} }
+  .turma{
+    background:var(--cartao); border-radius:var(--raio); box-shadow:var(--sombra);
+    padding:30px 26px; border-top:8px solid; position:relative;
+    transition:transform .18s ease;
+  }
+  .turma:hover{transform:translateY(-6px) rotate(-.5deg);}
+  .turma.t-sol{border-color:var(--sol);}
+  .turma.t-coral{border-color:var(--coral);}
+  .turma.t-mar{border-color:var(--mar);}
+  .turma .idade{
+    display:inline-block; font-size:.8rem; font-weight:800; letter-spacing:.06em;
+    padding:4px 12px; border-radius:999px; margin-bottom:14px; text-transform:uppercase;
+  }
+  .t-sol .idade{background:color-mix(in srgb, var(--sol) 25%, transparent);}
+  .t-coral .idade{background:color-mix(in srgb, var(--coral) 22%, transparent);}
+  .t-mar .idade{background:color-mix(in srgb, var(--mar) 20%, transparent);}
+  .turma h3{font-size:1.3rem; margin-bottom:10px;}
+  .turma p{color:var(--tinta-suave); font-size:.98rem;}
+
+  /* ---------- dia a dia ---------- */
+  .dia-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:40px;}
+  @media (max-width:900px){ .dia-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:600px){ .dia-grid{grid-template-columns:1fr;} }
+  .dia-item{
+    background:var(--cartao); border:1px solid var(--linha); border-radius:var(--raio);
+    padding:26px;
+  }
+  .dia-item .icone{
+    width:48px; height:48px; border-radius:14px; display:grid; place-items:center; margin-bottom:16px;
+  }
+  .dia-item .icone svg{width:24px; height:24px; fill:none; stroke-width:2; stroke:currentColor;}
+  .ic-sol{background:color-mix(in srgb, var(--sol) 22%, transparent); color:#8a5a00;}
+  .ic-mar{background:color-mix(in srgb, var(--mar) 18%, transparent); color:var(--mar-escuro);}
+  .ic-coral{background:color-mix(in srgb, var(--coral) 20%, transparent); color:var(--coral);}
+  .ic-uva{background:color-mix(in srgb, var(--uva) 20%, transparent); color:var(--uva);}
+  :root[data-theme="dark"] .ic-sol{color:var(--sol);}
+  @media (prefers-color-scheme: dark){ .ic-sol{color:var(--sol);} }
+  :root[data-theme="light"] .ic-sol{color:#8a5a00;}
+  .dia-item h3{font-size:1.08rem; margin-bottom:8px;}
+  .dia-item p{font-size:.95rem; color:var(--tinta-suave);}
+
+  /* ---------- estrutura ---------- */
+  .estrutura{background:color-mix(in srgb, var(--uva) 6%, var(--papel));}
+  .galeria{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:40px;}
+  @media (max-width:820px){ .galeria{grid-template-columns:repeat(2,1fr);} }
+  .foto{
+    aspect-ratio:1; border-radius:18px; display:grid; place-items:end start;
+    padding:14px; font-size:.85rem; font-weight:700; color:#fff;
+    text-shadow:0 1px 6px rgba(0,0,0,.45);
+    border:2px dashed color-mix(in srgb, var(--tinta) 22%, transparent);
+  }
+  .foto.g1{background:linear-gradient(160deg, var(--sol), var(--coral));}
+  .foto.g2{background:linear-gradient(160deg, var(--mar), var(--uva));}
+  .foto.g3{background:linear-gradient(160deg, var(--coral), var(--uva));}
+  .foto.g4{background:linear-gradient(160deg, var(--mar), var(--sol));}
+
+  /* ---------- depoimentos ---------- */
+  .depo-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:40px;}
+  @media (max-width:820px){ .depo-grid{grid-template-columns:1fr;} }
+  .depo{
+    background:var(--cartao); border-radius:var(--raio); box-shadow:var(--sombra);
+    padding:28px; position:relative;
+  }
+  .depo::before{
+    content:"“"; position:absolute; top:6px; left:20px; font-size:4rem;
+    color:color-mix(in srgb, var(--sol) 55%, transparent);
+    font-family:Georgia, serif; line-height:1;
+  }
+  .depo p{position:relative; font-size:.98rem; margin-top:26px; margin-bottom:18px;}
+  .depo footer{display:flex; align-items:center; gap:12px;}
+  .avatar{width:42px; height:42px; border-radius:50%; flex:none;}
+  .avatar.a1{background:linear-gradient(135deg, var(--coral), var(--sol));}
+  .avatar.a2{background:linear-gradient(135deg, var(--mar), var(--uva));}
+  .avatar.a3{background:linear-gradient(135deg, var(--uva), var(--coral));}
+  .depo footer strong{display:block; font-size:.92rem;}
+  .depo footer small{color:var(--tinta-suave); font-size:.8rem;}
+
+  /* ---------- contato ---------- */
+  .contato .wrap{display:grid; grid-template-columns:1fr 1fr; gap:56px;}
+  @media (max-width:820px){ .contato .wrap{grid-template-columns:1fr;} }
+  .info-lista{list-style:none; display:grid; gap:18px; margin-top:26px;}
+  .info-lista li{display:flex; gap:14px; align-items:flex-start;}
+  .info-lista .icone{
+    flex:none; width:42px; height:42px; border-radius:12px;
+    display:grid; place-items:center;
+  }
+  .info-lista .icone svg{width:20px; height:20px; fill:none; stroke-width:2; stroke:currentColor;}
+  .info-lista strong{display:block; font-size:.95rem;}
+  .info-lista span{color:var(--tinta-suave); font-size:.92rem;}
+  .form{
+    background:var(--cartao); border-radius:var(--raio); box-shadow:var(--sombra);
+    padding:34px; border:1px solid var(--linha);
+  }
+  .form h3{font-size:1.25rem; margin-bottom:6px;}
+  .form > p{color:var(--tinta-suave); font-size:.92rem; margin-bottom:22px;}
+  .campo{margin-bottom:16px;}
+  .campo label{display:block; font-weight:600; font-size:.88rem; margin-bottom:6px;}
+  .campo input, .campo select, .campo textarea{
+    width:100%; padding:12px 14px; border-radius:12px; border:2px solid var(--linha);
+    background:var(--papel); color:var(--tinta); font:inherit; font-size:.95rem;
+  }
+  .campo input:focus-visible, .campo select:focus-visible, .campo textarea:focus-visible{
+    outline:none; border-color:var(--mar);
+  }
+  .form .btn{width:100%; text-align:center;}
+
+  /* ---------- rodapé ---------- */
+  .rodape{
+    background:var(--tinta); color:var(--papel); padding:48px 0 28px; margin-top:40px;
+  }
+  :root[data-theme="dark"] .rodape{background:#181322;}
+  @media (prefers-color-scheme: dark){ .rodape{background:#181322;} }
+  :root[data-theme="light"] .rodape{background:var(--tinta);}
+  .rodape .wrap{display:grid; grid-template-columns:2fr 1fr 1fr; gap:40px;}
+  @media (max-width:820px){ .rodape .wrap{grid-template-columns:1fr;} }
+  .rodape h4{font-size:1rem; margin-bottom:14px;}
+  .rodape ul{list-style:none; display:grid; gap:8px;}
+  .rodape a{color:color-mix(in srgb, var(--papel) 75%, transparent); text-decoration:none; font-size:.93rem;}
+  .rodape a:hover{color:var(--sol);}
+  .rodape p{font-size:.93rem; color:color-mix(in srgb, var(--papel) 70%, transparent); max-width:38ch;}
+  .rodape .base{
+    grid-column:1/-1; border-top:1px solid color-mix(in srgb, var(--papel) 18%, transparent);
+    padding-top:20px; font-size:.82rem; text-align:center;
+    color:color-mix(in srgb, var(--papel) 55%, transparent);
+  }
+  .zap-flutuante{
+    position:fixed; right:22px; bottom:22px; z-index:60;
+    width:58px; height:58px; border-radius:50%; background:#25D366;
+    display:grid; place-items:center; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    transition:transform .15s ease;
+  }
+  .zap-flutuante:hover{transform:scale(1.08);}
+  .zap-flutuante svg{width:30px; height:30px; fill:#fff;}
+</style>
+
+<header>
+  <nav class="nav" aria-label="Navegação principal">
+    <a class="logo display" href="#inicio">
+      <span class="logo-mark" aria-hidden="true"><span></span></span>
+      Cantinho da Criança
+    </a>
+    <ul class="nav-links">
+      <li><a href="#sobre">A Escola</a></li>
+      <li><a href="#turmas">Turmas</a></li>
+      <li><a href="#diaadia">Dia a Dia</a></li>
+      <li><a href="#estrutura">Estrutura</a></li>
+      <li><a href="#contato">Contato</a></li>
+    </ul>
+    <a class="btn btn-sol" href="#contato">Agende uma visita</a>
+  </nav>
+</header>
+
+<main id="inicio">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">Berçário &bull; Educação Infantil</span>
+        <h1 class="display">Um cantinho feito para <em>crescer feliz
+          <svg viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M4 10 Q 50 2 100 8 T 196 6" stroke="var(--sol)" stroke-width="6" fill="none" stroke-linecap="round"/>
+          </svg></em>
+        </h1>
+        <p>Na Escola Cantinho da Criança, cada dia é uma descoberta. Acolhemos
+        crianças de 4 meses a 5 anos com carinho, segurança e uma proposta
+        pedagógica que respeita o ritmo de cada uma.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-mar" href="#contato">Venha nos conhecer</a>
+          <a class="btn btn-linha" href="#turmas">Conheça as turmas</a>
+        </div>
+        <p class="hero-note">Matrículas abertas para 2027 &bull; Vagas limitadas por turma</p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="blob sol"></div>
+        <div class="blob mar"></div>
+        <div class="blob coral"></div>
+        <div class="blob uva"></div>
+        <div class="hero-card">
+          <strong>Horário estendido</strong>
+          <small>Período integral, manhã ou tarde — do jeitinho que a sua família precisa.</small>
+          <div class="faixa">
+            <span class="f1">Integral</span>
+            <span class="f2">Meio período</span>
+            <span class="f3">Berçário</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="destaques">
+    <div class="wrap">
+      <div><strong>20+</strong><span>anos de história</span></div>
+      <div><strong>4m a 5a</strong><span>idades atendidas</span></div>
+      <div><strong>12h</strong><span>de funcionamento diário</span></div>
+      <div><strong>100%</strong><span>equipe especializada</span></div>
+    </div>
+  </div>
+
+  <section class="sobre" id="sobre">
+    <div class="wrap">
+      <div class="sobre-foto">[ Foto da escola / crianças brincando ]</div>
+      <div>
+        <span class="eyebrow">Quem somos</span>
+        <h2 class="display">Mais que uma escola, uma extensão da sua família</h2>
+        <p class="lead">Somos uma escola de educação infantil que acredita no
+        brincar como caminho para aprender. Aqui, cada criança é acolhida pelo
+        nome, respeitada em sua fase e incentivada a explorar o mundo com
+        curiosidade e alegria.</p>
+        <ul>
+          <li><span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13l5 5 11-12"/></svg></span>
+            Proposta pedagógica alinhada à BNCC, com foco no desenvolvimento socioemocional</li>
+          <li><span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13l5 5 11-12"/></svg></span>
+            Comunicação diária com as famílias por agenda digital</li>
+          <li><span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13l5 5 11-12"/></svg></span>
+            Alimentação preparada na escola com acompanhamento nutricional</li>
+          <li><span class="check"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13l5 5 11-12"/></svg></span>
+            Ambiente seguro, com monitoramento e controle de acesso</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="turmas" id="turmas">
+    <div class="wrap">
+      <span class="eyebrow">Nossas turmas</span>
+      <h2 class="display">Cada fase tem seu cantinho</h2>
+      <p class="lead">Turmas reduzidas e organizadas por faixa etária, para que
+      cada criança receba a atenção que merece.</p>
+      <div class="turmas-grid">
+        <article class="turma t-sol">
+          <span class="idade">4 meses a 1 ano</span>
+          <h3 class="display">Berçário</h3>
+          <p>Cuidado individualizado, estimulação sensorial e rotina de sono e
+          alimentação respeitada. Berçaristas experientes e ambiente
+          climatizado e higienizado.</p>
+        </article>
+        <article class="turma t-coral">
+          <span class="idade">2 a 3 anos</span>
+          <h3 class="display">Maternal</h3>
+          <p>Fase das grandes descobertas! Desfralde com parceria da família,
+          linguagem, movimento e muita brincadeira para desenvolver autonomia.</p>
+        </article>
+        <article class="turma t-mar">
+          <span class="idade">4 a 5 anos</span>
+          <h3 class="display">Pré-Escola</h3>
+          <p>Preparação para o Ensino Fundamental com letramento lúdico, noções
+          matemáticas, projetos de arte, música e natureza.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="diaadia">
+    <div class="wrap">
+      <span class="eyebrow">Nosso dia a dia</span>
+      <h2 class="display">Por que as famílias escolhem o Cantinho?</h2>
+      <div class="dia-grid">
+        <div class="dia-item">
+          <span class="icone ic-sol"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span>
+          <h3 class="display">Brincar ao ar livre</h3>
+          <p>Parquinho, área verde e atividades externas todos os dias, com sol e natureza fazendo parte da rotina.</p>
+        </div>
+        <div class="dia-item">
+          <span class="icone ic-mar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V8l8-5 8 5v11"/><path d="M9 19v-6h6v6"/></svg></span>
+          <h3 class="display">Ambiente acolhedor</h3>
+          <p>Salas planejadas para cada idade, com mobiliário seguro, cantinhos de leitura e espaços de descanso.</p>
+        </div>
+        <div class="dia-item">
+          <span class="icone ic-coral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C7 17 3 13.5 3 9.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 9 2.5c0 4-4 7.5-9 11.5z"/></svg></span>
+          <h3 class="display">Cuidado com afeto</h3>
+          <p>Equipe formada em educação infantil, com formação continuada e paixão genuína por crianças.</p>
+        </div>
+        <div class="dia-item">
+          <span class="icone ic-uva"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+          <h3 class="display">Agenda digital</h3>
+          <p>Acompanhe alimentação, sono, atividades e fotos do dia do seu filho direto pelo celular.</p>
+        </div>
+        <div class="dia-item">
+          <span class="icone ic-mar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v7a7 7 0 0 1-14 0z"/><path d="M12 18v3M8 21h8"/></svg></span>
+          <h3 class="display">Alimentação saudável</h3>
+          <p>Cardápio elaborado por nutricionista, refeições frescas preparadas na escola e respeito a restrições alimentares.</p>
+        </div>
+        <div class="dia-item">
+          <span class="icone ic-sol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg></span>
+          <h3 class="display">Música, arte e movimento</h3>
+          <p>Aulas de musicalização, artes e educação física adaptadas para cada faixa etária, toda semana.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="estrutura" id="estrutura">
+    <div class="wrap">
+      <span class="eyebrow">Nossa estrutura</span>
+      <h2 class="display">Espaços pensados para explorar com segurança</h2>
+      <p class="lead">Substitua os quadros abaixo por fotos reais da escola —
+      elas são o que mais encanta as famílias.</p>
+      <div class="galeria">
+        <div class="foto g1">[ Parquinho ]</div>
+        <div class="foto g2">[ Berçário ]</div>
+        <div class="foto g3">[ Salas de aula ]</div>
+        <div class="foto g4">[ Refeitório ]</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="depoimentos">
+    <div class="wrap">
+      <span class="eyebrow">Depoimentos</span>
+      <h2 class="display">Quem conhece, recomenda</h2>
+      <div class="depo-grid">
+        <article class="depo">
+          <p>Minha filha entrou no berçário com 6 meses e hoje está na
+          pré-escola. A equipe é carinhosa e a comunicação com os pais é
+          impecável. Confiança total!</p>
+          <footer>
+            <span class="avatar a1" aria-hidden="true"></span>
+            <div><strong>Nome da mãe/pai</strong><small>Responsável — Turma Pré-Escola</small></div>
+          </footer>
+        </article>
+        <article class="depo">
+          <p>O que mais me conquistou foi o acolhimento na adaptação. Meu filho
+          chora para ir embora da escola, não para ficar! Isso diz tudo.</p>
+          <footer>
+            <span class="avatar a2" aria-hidden="true"></span>
+            <div><strong>Nome da mãe/pai</strong><small>Responsável — Turma Maternal</small></div>
+          </footer>
+        </article>
+        <article class="depo">
+          <p>A agenda digital com fotos do dia é maravilhosa. Trabalho o dia
+          todo tranquila sabendo que ele está bem cuidado e feliz.</p>
+          <footer>
+            <span class="avatar a3" aria-hidden="true"></span>
+            <div><strong>Nome da mãe/pai</strong><small>Responsável — Berçário</small></div>
+          </footer>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="contato" id="contato">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">Venha nos conhecer</span>
+        <h2 class="display">Agende uma visita e sinta o clima do Cantinho</h2>
+        <p class="lead">Nada substitui conhecer a escola pessoalmente. Traga seu
+        pequeno para um tour e tire todas as suas dúvidas com a nossa equipe.</p>
+        <ul class="info-lista">
+          <li>
+            <span class="icone ic-mar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21C7.6 16.6 5 13.3 5 10a7 7 0 0 1 14 0c0 3.3-2.6 6.6-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+            <div><strong>Endereço</strong><span>Rua Exemplo, 123 — Bairro — Cidade/UF <em>(substituir pelo endereço real)</em></span></div>
+          </li>
+          <li>
+            <span class="icone ic-sol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a12 12 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span>
+            <div><strong>Telefone / WhatsApp</strong><span>(00) 0000-0000 &bull; (00) 90000-0000 <em>(substituir)</em></span></div>
+          </li>
+          <li>
+            <span class="icone ic-coral"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+            <div><strong>Horário de funcionamento</strong><span>Segunda a sexta, das 6h30 às 18h30 <em>(ajustar)</em></span></div>
+          </li>
+          <li>
+            <span class="icone ic-uva"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span>
+            <div><strong>E-mail</strong><span>contato@cantinhodacrianca.com.br</span></div>
+          </li>
+        </ul>
+      </div>
+      <form class="form" onsubmit="event.preventDefault(); alert('Preview: aqui a mensagem seria enviada para o WhatsApp ou e-mail da escola.');">
+        <h3 class="display">Peça mais informações</h3>
+        <p>Preencha e nossa equipe retorna no mesmo dia útil.</p>
+        <div class="campo">
+          <label for="nome">Seu nome</label>
+          <input id="nome" type="text" placeholder="Como podemos te chamar?" required>
+        </div>
+        <div class="campo">
+          <label for="tel">WhatsApp</label>
+          <input id="tel" type="tel" placeholder="(00) 90000-0000" required>
+        </div>
+        <div class="campo">
+          <label for="turma">Turma de interesse</label>
+          <select id="turma">
+            <option>Berçário (4 meses a 1 ano)</option>
+            <option>Maternal (2 a 3 anos)</option>
+            <option>Pré-Escola (4 a 5 anos)</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="msg">Mensagem (opcional)</label>
+          <textarea id="msg" rows="3" placeholder="Conte um pouco sobre o que você procura"></textarea>
+        </div>
+        <button class="btn btn-mar" type="submit">Quero agendar uma visita</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="rodape">
+  <div class="wrap">
+    <div>
+      <a class="logo display" href="#inicio" style="color:inherit; margin-bottom:14px;">
+        <span class="logo-mark" aria-hidden="true"><span></span></span>
+        Cantinho da Criança
+      </a>
+      <p style="margin-top:14px;">Educação infantil com carinho, segurança e
+      alegria — do berçário à pré-escola.</p>
+    </div>
+    <div>
+      <h4 class="display">Navegue</h4>
+      <ul>
+        <li><a href="#sobre">A Escola</a></li>
+        <li><a href="#turmas">Turmas</a></li>
+        <li><a href="#diaadia">Dia a Dia</a></li>
+        <li><a href="#estrutura">Estrutura</a></li>
+        <li><a href="#contato">Contato</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="display">Redes sociais</h4>
+      <ul>
+        <li><a href="#" aria-disabled="true">Instagram</a></li>
+        <li><a href="#" aria-disabled="true">Facebook</a></li>
+        <li><a href="#" aria-disabled="true">WhatsApp</a></li>
+      </ul>
+    </div>
+    <div class="base">
+      © 2026 Escola Cantinho da Criança — Todos os direitos reservados.
+      <br>Preview de proposta de site — textos, números e contatos são ilustrativos.
+    </div>
+  </div>
+</footer>
+
+<a class="zap-flutuante" href="#contato" aria-label="Falar no WhatsApp">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.3-1.4A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.6-6.1c-.3-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.4-3c-.3-.4 0-.6.1-.8l.4-.5c.1-.2.2-.3.3-.5v-.5c0-.1-.5-1.4-.7-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s1 2.5 1.1 2.7c.1.2 1.9 3 4.7 4.2.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.4-.3z"/></svg>
+</a>
+</body>
+</html>
