@@ -34,12 +34,13 @@
 
 html { scroll-behavior: smooth; }
 
+html, body { overflow-x: clip; }
+
 body {
   font-family: 'Jakarta', 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--ink);
   line-height: 1.6;
-  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -92,6 +93,8 @@ section { position: relative; }
   padding: 8px 14px; border-radius: 999px; transition: background .25s, color .25s;
 }
 .nav-links a:hover { background: rgba(0,174,239,.1); color: var(--blue-deep); }
+.nav-links .mob-cta { display: none; }
+.nav.open .nav-links .mob-cta { display: block; }
 .nav-cta {
   display: inline-flex; align-items: center; gap: 8px;
   background: var(--grad); color: #fff; font-weight: 700; font-size: .92rem;
@@ -490,11 +493,55 @@ footer { background: var(--navy); color: #a9c8e2; padding: 60px 0 30px; }
     background: #fff; padding: 12px 24px 24px; box-shadow: 0 30px 40px -20px rgba(7,32,63,.25);
     border-top: 1px solid var(--line);
   }
+  .nav.open .nav-links a { padding: 13px 14px; font-size: 1rem; }
+  .nav.open .nav-links .mob-cta {
+    margin-top: 10px; background: var(--grad); color: #fff; text-align: center;
+    border-radius: 999px; font-weight: 700; box-shadow: var(--shadow-blue);
+  }
   .chip-a { left: -2%; } .chip-b { right: -2%; }
 }
 @media (max-width: 560px) {
   .wrap { width: calc(100% - 36px); }
-  .sec { padding: 70px 0; }
+  .sec { padding: 58px 0; }
+  .sec-head { margin-bottom: 32px; }
+  .hero { padding-top: 112px; }
+  .hero p.lead { font-size: 1.02rem; }
+  .hero-ctas { margin-top: 24px; }
+  .hero-trust { gap: 10px; margin-top: 22px; }
   .btn { width: 100%; justify-content: center; }
+  .ultra-banner { padding: 20px; }
   .ultra-banner a { margin-left: 0; width: 100%; }
+  .stats { margin-top: 46px; }
+  .marquee { margin-top: 52px; }
+
+  /* especialidades: cards compactos em linha */
+  .spec-grid { gap: 10px; }
+  .spec-card { flex-direction: row; align-items: center; gap: 14px; padding: 13px 15px; }
+  .spec-card .ic { margin-bottom: 0; width: 42px; height: 42px; flex: none; }
+  .spec-card:hover { transform: none; }
+  .spec-card .tx { min-width: 0; }
+  .spec-card h3 { font-size: .94rem; }
+  .spec-card p { font-size: .78rem; }
+
+  .feat { padding: 30px 0; gap: 22px; }
+  .feat-visual { aspect-ratio: 16/9; }
+  .pills li { font-size: .78rem; padding: 7px 12px; }
+
+  .mock { transform: none; }
+  .portal-feats { gap: 13px; }
+
+  .values { gap: 12px; }
+  .value { padding: 20px; }
+  .quote { margin-top: 40px; }
+
+  .contact-grid { gap: 12px; }
+  .ccard { padding: 22px; }
+  .cta-final { padding: 46px 22px; margin-top: 44px; }
+
+  .foot { gap: 26px; padding-bottom: 30px; }
+  .foot img { height: 58px; }
+  .foot-base { flex-direction: column; gap: 6px; }
+
+  .wa-float { width: 54px; height: 54px; right: 16px; bottom: 16px; }
+  .wa-float svg { width: 26px; height: 26px; }
 }
