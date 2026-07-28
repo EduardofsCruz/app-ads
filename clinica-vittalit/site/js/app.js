@@ -154,3 +154,31 @@ document.querySelectorAll('[data-count]').forEach(el => cio.observe(el));
 
 /* ---------- ano ---------- */
 document.getElementById('year').textContent = new Date().getFullYear();
+
+/* ---------- contato dinâmico (editável no painel admin) ---------- */
+(async () => {
+  const cfg = window.VITTALIT;
+  if (!cfg) return;
+  try {
+    const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/vittalit_settings?select=key,value`, {
+      headers: { apikey: cfg.SUPABASE_ANON_KEY, Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}` },
+    });
+    if (!res.ok) return;
+    const settings = Object.fromEntries((await res.json()).map((r) => [r.key, r.value]));
+
+    if (settings.whatsapp) {
+      document.querySelectorAll('a[href*="wa.me/"]').forEach((a) => {
+        a.href = a.href.replace(/wa\.me\/\d+/, 'wa.me/' + settings.whatsapp);
+      });
+    }
+    if (settings.phone) {
+      const digits = settings.phone.replace(/\D/g, '');
+      document.querySelectorAll('a[href^="tel:"]').forEach((a) => { a.href = 'tel:+55' + digits; });
+      document.querySelectorAll('[data-set="phone"]').forEach((el) => { el.textContent = settings.phone; });
+    }
+    if (settings.email) {
+      document.querySelectorAll('a[href^="mailto:"]').forEach((a) => { a.href = 'mailto:' + settings.email; });
+      document.querySelectorAll('[data-set="email"]').forEach((el) => { el.textContent = settings.email; });
+    }
+  } catch { /* sem rede: mantém os dados padrão do HTML */ }
+})();

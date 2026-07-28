@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Administrativo — Clínica Vittalit</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="../img/favicon.png">
+<link rel="stylesheet" href="../css/portal.css">
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <img class="logo" src="../img/logo-full.png" alt="Clínica Vittalit">
+    <h1>Painel Administrativo</h1>
+    <p class="sub">Acesso restrito à equipe da clínica</p>
+    <div class="msg err" id="authMsg"></div>
+    <form id="loginForm">
+      <div class="field">
+        <label for="login">E-mail</label>
+        <input id="login" type="email" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="password">Senha</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary" id="loginBtn" type="submit">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app hidden" id="appScreen">
+  <header class="topbar">
+    <div class="topbar-in">
+      <img src="../img/logo-icon.png" alt="Vittalit">
+      <div class="who"><b id="whoName">—</b><small>Painel administrativo</small></div>
+      <button class="out" id="logoutBtn">Sair</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="tabs">
+      <button class="tab active" data-tab="patients">Pacientes</button>
+      <button class="tab" data-tab="settings">Site &amp; contato</button>
+      <button class="tab" data-tab="account">Minha conta</button>
+    </div>
+
+    <!-- pacientes -->
+    <section class="panel active" data-panel="patients">
+      <div class="toolrow">
+        <label class="search">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="patientSearch" placeholder="Buscar por nome ou CPF…">
+        </label>
+        <button class="btn btn-primary" id="newPatientBtn" style="width:auto">+ Novo paciente</button>
+      </div>
+      <div class="card" id="patientList"></div>
+    </section>
+
+    <!-- detalhe do paciente -->
+    <section class="panel" data-panel="detail">
+      <button class="btn btn-soft btn-sm" id="backBtn" style="margin-bottom:16px">← Voltar aos pacientes</button>
+      <div id="detailBox"></div>
+    </section>
+
+    <!-- configurações do site -->
+    <section class="panel" data-panel="settings">
+      <div class="card">
+        <h3>Contato exibido no site</h3>
+        <p style="color:var(--muted);font-size:.86rem;margin-bottom:16px">Alterações aqui atualizam automaticamente o site institucional (botões de WhatsApp, telefone etc.).</p>
+        <div class="msg" id="settingsMsg"></div>
+        <div class="grid2">
+          <div class="field"><label>WhatsApp (só números, com DDI+DDD)</label><input id="set_whatsapp" placeholder="553438132179"></div>
+          <div class="field"><label>Telefone (como aparece no site)</label><input id="set_phone" placeholder="(34) 3813-2179"></div>
+          <div class="field"><label>E-mail</label><input id="set_email"></div>
+          <div class="field"><label>Facebook (usuário)</label><input id="set_facebook"></div>
+        </div>
+        <div class="field"><label>Endereço</label><input id="set_address"></div>
+        <button class="btn btn-primary" id="saveSettingsBtn" style="width:auto">Salvar configurações</button>
+      </div>
+    </section>
+
+    <!-- conta -->
+    <section class="panel" data-panel="account">
+      <div class="card">
+        <h3>Alterar minha senha</h3>
+        <div class="msg" id="accountMsg"></div>
+        <div class="grid2">
+          <div class="field"><label>Nova senha</label><input id="newPass" type="password" autocomplete="new-password"></div>
+          <div class="field"><label>Repetir nova senha</label><input id="newPass2" type="password" autocomplete="new-password"></div>
+        </div>
+        <button class="btn btn-primary" id="changePassBtn" style="width:auto">Salvar nova senha</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- modal: novo paciente -->
+<div class="modal-bg" id="patientModal">
+  <div class="modal">
+    <button class="x" data-close>✕</button>
+    <h3>Novo paciente</h3>
+    <div class="msg" id="patientMsg"></div>
+    <div class="grid2">
+      <div class="field"><label>Nome completo *</label><input id="np_name"></div>
+      <div class="field"><label>CPF * (será o login)</label><input id="np_cpf" placeholder="000.000.000-00"></div>
+      <div class="field"><label>Telefone/WhatsApp</label><input id="np_phone"></div>
+      <div class="field"><label>Data de nascimento</label><input id="np_birth" type="date"></div>
+    </div>
+    <div class="field"><label>E-mail (opcional — vira o login no lugar do CPF)</label><input id="np_email" type="email"></div>
+    <div class="field">
+      <label>Senha inicial *</label>
+      <input id="np_pass">
+      <p class="hint">Anote e entregue ao paciente. Ele pode usar CPF + esta senha para entrar no portal.</p>
+    </div>
+    <button class="btn btn-primary" id="createPatientBtn">Cadastrar paciente</button>
+  </div>
+</div>
+
+<!-- modal: novo exame -->
+<div class="modal-bg" id="examModal">
+  <div class="modal">
+    <button class="x" data-close>✕</button>
+    <h3>Novo resultado de exame</h3>
+    <div class="msg" id="examMsg"></div>
+    <div class="grid2">
+      <div class="field"><label>Título do exame *</label><input id="ex_title" placeholder="Ex.: Ultrassom obstétrico com Doppler"></div>
+      <div class="field"><label>Categoria</label>
+        <select id="ex_cat">
+          <option value="ultrassom">Ultrassom</option>
+          <option value="cardiologico">Cardiológico</option>
+          <option value="ginecologico">Ginecológico</option>
+          <option value="laboratorial">Laboratorial</option>
+          <option value="outros" selected>Outros</option>
+        </select>
+      </div>
+      <div class="field"><label>Data do exame</label><input id="ex_date" type="date"></div>
+      <div class="field"><label>Semana de gestação (se aplicável)</label><input id="ex_week" type="number" min="1" max="45" placeholder="Ex.: 22"></div>
+    </div>
+    <div class="field"><label>Observações (visível para o paciente)</label><input id="ex_notes"></div>
+    <div class="field"><label>Arquivo PDF do resultado</label><input id="ex_file" type="file" accept="application/pdf,image/*"></div>
+    <button class="btn btn-primary" id="saveExamBtn">Salvar exame</button>
+  </div>
+</div>
+
+<script src="../js/supabase.js"></script>
+<script src="../js/config.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

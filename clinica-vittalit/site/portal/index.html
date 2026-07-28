@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal do Paciente — Clínica Vittalit</title>
+<meta name="description" content="Acesse seus resultados de exames, plano alimentar e acompanhamento de gestação — Portal do Paciente da Clínica Vittalit.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="../img/favicon.png">
+<link rel="stylesheet" href="../css/portal.css">
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <img class="logo" src="../img/logo-full.png" alt="Clínica Vittalit">
+    <h1>Portal do Paciente</h1>
+    <p class="sub">Acesse seus exames e acompanhamentos</p>
+    <div class="msg err" id="authMsg"></div>
+    <form id="loginForm">
+      <div class="field">
+        <label for="login">CPF ou e-mail</label>
+        <input id="login" autocomplete="username" placeholder="000.000.000-00" required>
+      </div>
+      <div class="field">
+        <label for="password">Senha</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+        <p class="hint">Recebeu sua senha na clínica. Esqueceu? Fale com a recepção: <a href="tel:+553438132179" style="color:var(--blue-deep);font-weight:700" data-phone-link>ligar</a>.</p>
+      </div>
+      <button class="btn btn-primary" id="loginBtn" type="submit">Entrar</button>
+    </form>
+    <p class="hint" style="text-align:center;margin-top:18px;color:var(--muted);font-size:.78rem">
+      Ambiente seguro · dados protegidos conforme a LGPD<br>
+      <a href="../index.html" style="color:var(--blue-deep);font-weight:700">← voltar ao site</a>
+    </p>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app hidden" id="appScreen">
+  <header class="topbar">
+    <div class="topbar-in">
+      <img src="../img/logo-icon.png" alt="Vittalit">
+      <div class="who"><b id="whoName">—</b><small>Portal do Paciente</small></div>
+      <button class="out" id="logoutBtn">Sair</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="pagehead">
+      <h2 id="hello">Olá!</h2>
+      <p>Acompanhe aqui seus resultados e orientações da Clínica Vittalit.</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="exams">Resultados de exames</button>
+      <button class="tab" data-tab="plan">Plano alimentar</button>
+      <button class="tab hidden" data-tab="preg" id="pregTab">Minha gestação</button>
+    </div>
+
+    <section class="panel active" data-panel="exams">
+      <div id="examList"></div>
+    </section>
+
+    <section class="panel" data-panel="plan">
+      <div id="planView"></div>
+    </section>
+
+    <section class="panel" data-panel="preg">
+      <div id="pregView"></div>
+    </section>
+  </main>
+</div>
+
+<script src="../js/supabase.js"></script>
+<script src="../js/config.js"></script>
+<script src="portal.js"></script>
+</body>
+</html>
