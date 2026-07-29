@@ -65,6 +65,16 @@ async function boot() {
     msg.classList.add('show');
     return;
   }
+  if (profile.role === 'admin') {
+    // sessão de administrador: o portal é exclusivo dos pacientes
+    const msg = $('#authMsg');
+    msg.innerHTML = 'Você está conectado como <b>administrador</b>. O portal é exclusivo para pacientes.<br><br>'
+      + '<a href="../admin/" class="btn btn-primary" style="display:inline-flex;width:auto;padding:10px 18px;font-size:.9rem">Ir para o painel administrativo</a> '
+      + '<button type="button" id="adminOut" class="btn btn-soft" style="display:inline-flex;width:auto;padding:10px 18px;font-size:.9rem">Sair e entrar como paciente</button>';
+    msg.classList.add('show');
+    document.getElementById('adminOut').addEventListener('click', async () => { await db.auth.signOut(); location.reload(); });
+    return;
+  }
   me = profile;
 
   authScreen.classList.add('hidden');
@@ -74,7 +84,6 @@ async function boot() {
   $('#hello').textContent = `Olá, ${first}! 👋`;
 
   loadExams();
-  loadPlan();
   loadPregnancy();
 }
 
@@ -106,53 +115,6 @@ async function loadExams() {
     if (err || !data?.signedUrl) { alert('Não foi possível gerar o link agora. Tente novamente.'); return; }
     window.open(data.signedUrl, '_blank');
   }));
-}
-
-/* markdown bem simples: ## título, - lista, **negrito** */
-function renderPlanContent(text) {
-  const lines = String(text || '').split('\n');
-  let html = '', inList = false;
-  const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  for (const ln of lines) {
-    const t = ln.trim();
-    if (t.startsWith('- ') || t.startsWith('* ')) {
-      if (!inList) { html += '<ul>'; inList = true; }
-      html += `<li>${inline(t.slice(2))}</li>`;
-      continue;
-    }
-    if (inList) { html += '</ul>'; inList = false; }
-    if (!t) continue;
-    if (t.startsWith('#')) html += `<h4>${inline(t.replace(/^#+\s*/, ''))}</h4>`;
-    else html += `<p>${inline(t)}</p>`;
-  }
-  if (inList) html += '</ul>';
-  return html || '<p class="empty">Plano em elaboração.</p>';
-}
-
-async function loadPlan() {
-  const box = $('#planView');
-  const { data: plans } = await db.from('vittalit_meal_plans')
-    .select('*').eq('patient_id', me.id).eq('active', true).order('updated_at', { ascending: false }).limit(1);
-
-  const plan = plans?.[0];
-  if (!plan) {
-    box.innerHTML = `<div class="card"><p class="empty">Você ainda não tem um plano alimentar ativo.<br><small>Agende uma consulta com a nutricionista para começar o seu. 🥗</small></p></div>`;
-    return;
-  }
-  let fileBtn = '';
-  if (plan.file_path) fileBtn = `<button class="btn btn-soft btn-sm" id="planDl" style="margin-top:14px">Baixar em PDF</button>`;
-  box.innerHTML = `
-    <div class="card">
-      <h3>${esc(plan.title)} <span class="badge green" style="margin-left:8px">Ativo</span></h3>
-      <small style="color:var(--muted)">Atualizado em ${new Date(plan.updated_at).toLocaleDateString('pt-BR')} pela equipe de nutrição</small>
-      <div class="plan-view" style="margin-top:14px">${renderPlanContent(plan.content)}</div>
-      ${fileBtn}
-    </div>`;
-  const dl = $('#planDl');
-  if (dl) dl.addEventListener('click', async () => {
-    const { data } = await db.storage.from('vittalit').createSignedUrl(plan.file_path, 3600);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-  });
 }
 
 async function loadPregnancy() {

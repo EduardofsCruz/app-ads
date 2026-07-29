@@ -7,7 +7,7 @@
 <meta name="description" content="Acesse seus resultados de exames, plano alimentar e acompanhamento de gestação — Portal do Paciente da Clínica Vittalit.">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="../img/favicon.png">
-<link rel="stylesheet" href="../css/portal.css">
+<link rel="stylesheet" href="../css/portal.css?v=3">
 </head>
 <body>
 
@@ -55,16 +55,11 @@
 
     <div class="tabs">
       <button class="tab active" data-tab="exams">Resultados de exames</button>
-      <button class="tab" data-tab="plan">Plano alimentar</button>
       <button class="tab hidden" data-tab="preg" id="pregTab">Minha gestação</button>
     </div>
 
     <section class="panel active" data-panel="exams">
       <div id="examList"></div>
-    </section>
-
-    <section class="panel" data-panel="plan">
-      <div id="planView"></div>
     </section>
 
     <section class="panel" data-panel="preg">
@@ -73,8 +68,8 @@
   </main>
 </div>
 
-<script src="../js/supabase.js"></script>
-<script src="../js/config.js"></script>
-<script src="portal.js"></script>
+<script src="../js/supabase.js?v=3"></script>
+<script src="../js/config.js?v=3"></script>
+<script src="portal.js?v=3"></script>
 </body>
 </html>

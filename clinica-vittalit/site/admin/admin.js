@@ -135,7 +135,9 @@ $('#createPatientBtn').addEventListener('click', async () => {
   });
   btn.disabled = false; btn.textContent = 'Cadastrar paciente';
   if (out.error) { flash(msg, out.error); return; }
-  flash(msg, `Paciente cadastrado! Login: ${out.login} — anote a senha.`, true);
+  flash(msg, out.emailed
+    ? `Paciente cadastrado! O acesso foi enviado por e-mail. Login: ${out.login}`
+    : `Paciente cadastrado! Login: ${out.login} — anote a senha e entregue ao paciente.`, true);
   loadPatients();
   setTimeout(() => $('#patientModal').classList.remove('show'), 1800);
 });
@@ -148,12 +150,10 @@ async function openPatient(id) {
   const box = $('#detailBox');
   box.innerHTML = '<div class="card"><p class="empty">Carregando…</p></div>';
 
-  const [{ data: exams }, { data: plans }, { data: pregs }] = await Promise.all([
+  const [{ data: exams }, { data: pregs }] = await Promise.all([
     db.from('vittalit_exams').select('*').eq('patient_id', id).order('exam_date', { ascending: false }),
-    db.from('vittalit_meal_plans').select('*').eq('patient_id', id).order('updated_at', { ascending: false }).limit(1),
     db.from('vittalit_pregnancies').select('*').eq('patient_id', id).order('created_at', { ascending: false }).limit(1),
   ]);
-  const plan = plans?.[0];
   const preg = pregs?.[0];
 
   box.innerHTML = `
@@ -164,6 +164,7 @@ async function openPatient(id) {
       </p>
       <div class="toolrow" style="margin:14px 0 0">
         <button class="btn btn-soft btn-sm" id="pwBtn">Redefinir senha</button>
+        <button class="btn btn-soft btn-sm" id="mailBtn">Enviar acesso por e-mail</button>
         <button class="btn btn-danger btn-sm" id="delBtn">Excluir paciente</button>
       </div>
       <div class="msg" id="detailMsg" style="margin-top:12px"></div>
@@ -182,22 +183,6 @@ async function openPatient(id) {
             <button class="btn btn-danger btn-sm" data-delexam="${e.id}" data-path="${esc(e.file_path || '')}">Excluir</button>
           </div>
         </div>`).join('') || '<p class="empty">Nenhum exame lançado.</p>'}
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Plano alimentar</h3>
-      <div class="field">
-        <label>Título</label>
-        <input id="planTitle" value="${esc(plan?.title || 'Plano alimentar')}">
-      </div>
-      <div class="field">
-        <label>Conteúdo (## para títulos, - para itens, **negrito**)</label>
-        <textarea id="planContent" placeholder="## Café da manhã&#10;- 1 fruta&#10;- ...">${esc(plan?.content || '')}</textarea>
-      </div>
-      <div class="toolrow">
-        <button class="btn btn-primary btn-sm" id="savePlanBtn" style="width:auto">Salvar plano</button>
-        ${plan ? `<label style="display:flex;align-items:center;gap:8px;font-size:.86rem;font-weight:600;color:var(--muted)"><input type="checkbox" id="planActive" ${plan.active ? 'checked' : ''}> Plano ativo (visível ao paciente)</label>` : ''}
       </div>
     </div>
 
@@ -251,24 +236,15 @@ async function openPatient(id) {
     openPatient(current.id);
   }));
 
-  $('#savePlanBtn').addEventListener('click', async () => {
-    const btn = $('#savePlanBtn');
-    btn.disabled = true;
-    const payload = {
-      patient_id: current.id,
-      title: $('#planTitle').value.trim() || 'Plano alimentar',
-      content: $('#planContent').value,
-      active: $('#planActive') ? $('#planActive').checked : true,
-      created_by: me.id,
-      updated_at: new Date().toISOString(),
-    };
-    const q = plan
-      ? db.from('vittalit_meal_plans').update(payload).eq('id', plan.id)
-      : db.from('vittalit_meal_plans').insert(payload);
-    const { error } = await q;
-    btn.disabled = false;
-    flash(dmsg, error ? error.message : 'Plano alimentar salvo!', !error);
-    if (!error && !plan) openPatient(current.id);
+  $('#mailBtn').addEventListener('click', async () => {
+    const email = prompt(
+      'E-mail do paciente para receber o acesso:\n(se o paciente já tem e-mail cadastrado, deixe em branco para usar o mesmo)',
+      '');
+    if (email === null) return;
+    const pass = 'Vit' + Math.random().toString(36).slice(2, 8) + Math.floor(Math.random() * 90 + 10);
+    if (!confirm(`Será gerada uma NOVA senha (${pass}) e enviada por e-mail junto com o CPF de login. Continuar?`)) return;
+    const out = await callAdminFn({ action: 'send_access_email', user_id: current.id, email: email.trim(), password: pass });
+    flash(dmsg, out.error || `Acesso enviado para ${out.email}! Nova senha: ${pass}`, !out.error);
   });
 
   $('#savePregBtn').addEventListener('click', async () => {
