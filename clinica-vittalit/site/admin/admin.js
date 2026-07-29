@@ -462,7 +462,7 @@ function renderOmbudsman() {
 }
 
 /* ---------- configurações do site ---------- */
-const SETTING_KEYS = ['whatsapp', 'phone', 'email', 'instagram', 'facebook', 'address'];
+const SETTING_KEYS = ['whatsapp', 'phone', 'email', 'instagram', 'facebook', 'address', 'store_url'];
 
 async function loadSettings() {
   const { data } = await db.from('vittalit_settings').select('key,value');
