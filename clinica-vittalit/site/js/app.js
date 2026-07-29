@@ -12,7 +12,7 @@ const ESPECIALIDADES = [
   { n: 'Fisioterapia', d: 'Reabilitação funcional e pilates clínico.', i: 'move' },
   { n: 'Gastroenterologia', d: 'Saúde do aparelho digestivo.', i: 'steth' },
   { n: 'Geriatria', d: 'Cuidado especializado para a melhor idade.', i: 'user' },
-  { n: 'Ginecologia / Obstetrícia e Estética Íntima', d: 'Saúde da mulher em todas as fases.', i: 'flower' },
+  { n: 'Ginecologia / Obstetrícia', d: 'Saúde da mulher em todas as fases.', i: 'flower' },
   { n: 'Medicina do Trabalho', d: 'Saúde ocupacional para empresas e trabalhadores.', i: 'brief' },
   { n: 'Neuropsicologia', d: 'Avaliação e reabilitação cognitiva.', i: 'brain' },
   { n: 'Nutrição', d: 'Especialista em materno-infantil: gestação, fertilidade, introdução alimentar e menopausa.', i: 'leaf' },
@@ -59,12 +59,13 @@ const EXAMES = {
   gineco: [
     'Coleta de citologia', 'Retirada de DIU', 'Biópsia de colo', 'Colposcopia',
     'Cauterização química', 'Inserção de Implanon', 'DIU Mirena e DIU de cobre',
-    'Sessão de LED', 'Estética íntima — clareamento íntimo', 'Tratamento de Fraxx',
+    'Sessão de LED',
   ],
   ultra: [
     'Ultrassom de mamas e axilas', 'Transvaginal com e sem Doppler', 'Pélvico transabdominal',
     'Obstétrico com Doppler e perfil biofísico fetal', 'Morfológico 1º e 2º trimestre',
     'Obstétrico simples 2º trimestre', 'Obstétrico transvaginal 1º trimestre',
+    'Ginecológicos em geral', 'Partes moles', 'Articulações',
     'Abdome superior', 'Abdome total', 'Fígado e vias biliares',
     'Rins e vias urinárias', 'Próstata-pelve',
   ],
@@ -133,12 +134,11 @@ const AGENDA = [
   { n: 'Psicóloga', d: ['seg', 'ter', 'qua', 'qui', 'sex'], i: 'chat' },
   { n: 'Polissonografia', d: ['seg', 'ter', 'qua', 'qui'], i: 'scan' },
   { n: 'Exames cardiológicos (MAPA, Holter e eletrocardiograma)', d: ['seg', 'ter', 'qua', 'qui'], i: 'heart' },
-  { n: 'Fisioterapeuta', d: ['ter', 'qui', 'sex'], i: 'move' },
-  { n: 'Pilates', d: ['seg', 'qua'], i: 'move' },
+  { n: 'Fisioterapeuta', d: ['seg', 'qua', 'sex'], i: 'move' },
+  { n: 'Pilates', d: ['seg', 'ter', 'qua', 'qui'], i: 'move' },
   { n: 'Cardiologista', d: ['ter'], i: 'heart' },
-  { n: 'Ginecologista', d: ['sex'], i: 'flower' },
 ];
-const AGENDA_MENSAL = 'Estética Avançada, Gastroenterologista, Nefrologista, Quiropraxista, Ortopedista, Geriatra, Reumatologista, Psiquiatra, Psicanalista, Alergologista, Pneumologista e Exames Cardiológicos (Ecocardiograma e Duplex)';
+const AGENDA_MENSAL = 'Ginecologista, Estética Avançada, Gastroenterologista, Nefrologista, Quiropraxista, Ortopedista, Geriatra, Reumatologista, Psiquiatra, Psicanalista, Alergologista, Pneumologista e Exames Cardiológicos (Ecocardiograma e Duplex)';
 const DAY_LABEL = { seg: 'Segunda', ter: 'Terça', qua: 'Quarta', qui: 'Quinta', sex: 'Sexta' };
 
 const agGrid = document.getElementById('agendaGrid');
