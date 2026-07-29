@@ -126,6 +126,35 @@ document.getElementById('examTabs').addEventListener('click', (ev) => {
     p.classList.toggle('active', p.dataset.panel === btn.dataset.tab));
 });
 
+/* ---------- agenda semanal ---------- */
+const AGENDA = [
+  { n: 'Clínico Geral', d: ['seg', 'ter', 'qua', 'qui', 'sex'], i: 'steth' },
+  { n: 'Nutricionista', d: ['seg', 'ter', 'qua', 'qui', 'sex'], i: 'leaf' },
+  { n: 'Psicóloga', d: ['seg', 'ter', 'qua', 'qui', 'sex'], i: 'chat' },
+  { n: 'Polissonografia', d: ['seg', 'ter', 'qua', 'qui'], i: 'scan' },
+  { n: 'Exames cardiológicos (MAPA, Holter e eletrocardiograma)', d: ['seg', 'ter', 'qua', 'qui'], i: 'heart' },
+  { n: 'Fisioterapeuta', d: ['ter', 'qui', 'sex'], i: 'move' },
+  { n: 'Pilates', d: ['seg', 'qua'], i: 'move' },
+  { n: 'Cardiologista', d: ['ter'], i: 'heart' },
+  { n: 'Ginecologista', d: ['sex'], i: 'flower' },
+];
+const AGENDA_MENSAL = 'Estética Avançada, Gastroenterologista, Nefrologista, Quiropraxista, Ortopedista, Geriatra, Reumatologista, Psiquiatra, Psicanalista, Alergologista, Pneumologista e Exames Cardiológicos (Ecocardiograma e Duplex)';
+const DAY_LABEL = { seg: 'Segunda', ter: 'Terça', qua: 'Quarta', qui: 'Quinta', sex: 'Sexta' };
+
+const agGrid = document.getElementById('agendaGrid');
+if (agGrid) {
+  const agIcon = (k) => `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k] || ICONS.steth}</svg>`;
+  agGrid.innerHTML = AGENDA.map((a, i) => `
+    <div class="ag-card rv" style="--d:${(i % 6) * 0.06}s">
+      <h3>${agIcon(a.i)} ${a.n}</h3>
+      <div class="ag-days">${a.d.map((d) => `<span>${DAY_LABEL[d]}</span>`).join('')}</div>
+    </div>`).join('') + `
+    <div class="ag-card full rv">
+      <h3>${agIcon('spark')} Demais especialidades — 1x ao mês</h3>
+      <p>${AGENDA_MENSAL}. Consulte as datas do mês pelo WhatsApp.</p>
+    </div>`;
+}
+
 /* ---------- marquee duplicado para loop infinito ---------- */
 const track = document.getElementById('marqueeTrack');
 track.innerHTML += track.innerHTML;
@@ -182,5 +211,99 @@ document.getElementById('year').textContent = new Date().getFullYear();
       document.querySelectorAll('a[href^="mailto:"]').forEach((a) => { a.href = 'mailto:' + settings.email; });
       document.querySelectorAll('[data-set="email"]').forEach((el) => { el.textContent = settings.email; });
     }
+    if (settings.instagram) {
+      const user = settings.instagram.replace(/^@/, '');
+      document.querySelectorAll('a[href*="instagram.com"]').forEach((a) => { a.href = 'https://www.instagram.com/' + user; });
+      document.querySelectorAll('[data-set="instagram"]').forEach((el) => { el.textContent = '@' + user; });
+    }
   } catch { /* sem rede: mantém os dados padrão do HTML */ }
 })();
+
+/* ---------- corpo técnico e parceiros (gerenciados no painel admin) ---------- */
+(async () => {
+  const cfg = window.VITTALIT;
+  if (!cfg) return;
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const publicUrl = (p) => `${cfg.SUPABASE_URL}/storage/v1/object/public/vittalit-public/${p}`;
+  const rest = (path) => fetch(`${cfg.SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: cfg.SUPABASE_ANON_KEY, Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}` },
+  }).then((r) => (r.ok ? r.json() : []));
+
+  try {
+    const [team, partners] = await Promise.all([
+      rest('vittalit_team?select=*&visible=eq.true&order=sort,name'),
+      rest('vittalit_partners?select=*&visible=eq.true&order=sort,name'),
+    ]);
+
+    if (team.length) {
+      const sec = document.getElementById('equipe');
+      const initials = (n) => n.trim().split(/\s+/).map((w) => w[0]).filter((_, i, a) => i === 0 || i === a.length - 1).join('').toUpperCase();
+      document.getElementById('teamGrid').innerHTML = team.map((t, i) => `
+        <div class="tm-card rv" style="--d:${(i % 6) * 0.06}s">
+          <div class="tm-photo">${t.photo_path ? `<img src="${publicUrl(esc(t.photo_path))}" alt="${esc(t.name)}" loading="lazy">` : esc(initials(t.name))}</div>
+          <h3>${esc(t.name)}</h3>
+          <p class="role">${esc(t.role)}</p>
+          ${t.detail ? `<p class="detail">${esc(t.detail)}</p>` : ''}
+        </div>`).join('');
+      sec.hidden = false;
+      sec.querySelectorAll('.rv').forEach((el) => io.observe(el));
+    }
+
+    if (partners.length) {
+      const sec = document.getElementById('parceiros');
+      document.getElementById('partnerGrid').innerHTML = partners.map((p, i) => {
+        const inner = `
+          <div class="pt-logo">${p.logo_path ? `<img src="${publicUrl(esc(p.logo_path))}" alt="${esc(p.name)}" loading="lazy">` : `<span class="ph">${esc(p.name[0].toUpperCase())}</span>`}</div>
+          <b>${esc(p.name)}</b>
+          ${p.detail ? `<small>${esc(p.detail)}</small>` : ''}`;
+        return p.url
+          ? `<a class="pt-card rv" style="--d:${(i % 6) * 0.05}s" href="${esc(p.url)}" target="_blank" rel="noopener">${inner}</a>`
+          : `<div class="pt-card rv" style="--d:${(i % 6) * 0.05}s">${inner}</div>`;
+      }).join('');
+      sec.hidden = false;
+      sec.querySelectorAll('.rv').forEach((el) => io.observe(el));
+    }
+  } catch { /* sem rede: seções ficam ocultas */ }
+})();
+
+/* ---------- ouvidoria e canal de denúncias ---------- */
+const ouvForm = document.getElementById('ouvForm');
+if (ouvForm) ouvForm.addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const cfg = window.VITTALIT;
+  const btn = document.getElementById('ouvBtn');
+  const msg = document.getElementById('ouvMsg');
+  const text = document.getElementById('ouvMessage').value.trim();
+  msg.className = 'ouv-msg';
+  if (text.length < 10) {
+    msg.textContent = 'Escreva sua mensagem com um pouco mais de detalhes, por favor.';
+    msg.classList.add('show', 'err');
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/vittalit_ombudsman`, {
+      method: 'POST',
+      headers: {
+        apikey: cfg.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify({
+        kind: document.getElementById('ouvKind').value,
+        name: document.getElementById('ouvName').value.trim() || null,
+        contact: document.getElementById('ouvContact').value.trim() || null,
+        message: text,
+      }),
+    });
+    if (!res.ok) throw new Error('http ' + res.status);
+    msg.textContent = 'Mensagem enviada com sucesso. Obrigado por nos ajudar a melhorar! 💙';
+    msg.classList.add('show', 'ok');
+    ouvForm.reset();
+  } catch {
+    msg.textContent = 'Não foi possível enviar agora. Tente novamente em instantes ou fale conosco pelo WhatsApp.';
+    msg.classList.add('show', 'err');
+  }
+  btn.disabled = false; btn.textContent = 'Enviar mensagem';
+});

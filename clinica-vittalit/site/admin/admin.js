@@ -51,14 +51,18 @@ async function boot() {
   $('#whoName').textContent = profile.full_name;
   loadPatients();
   loadSettings();
+  loadTeam();
+  loadPartners();
+  loadOmbudsman();
 }
 
 /* ---------- tabs / navegação ---------- */
 const showPanel = (name) => {
-  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.dataset.tab === name));
+  if (!name) return;
+  document.querySelectorAll('.tab[data-tab]').forEach((x) => x.classList.toggle('active', x.dataset.tab === name));
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === name));
 };
-document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showPanel(t.dataset.tab)));
+document.querySelectorAll('.tab[data-tab]').forEach((t) => t.addEventListener('click', () => showPanel(t.dataset.tab)));
 $('#backBtn').addEventListener('click', () => { current = null; showPanel('patients'); });
 
 /* ---------- modais ---------- */
@@ -324,8 +328,165 @@ $('#saveExamBtn').addEventListener('click', async () => {
   setTimeout(() => { $('#examModal').classList.remove('show'); openPatient(current.id); }, 1200);
 });
 
+/* ---------- equipe (corpo técnico) ---------- */
+async function uploadPublic(file, folder) {
+  const clean = file.name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  const path = `${folder}/${Date.now()}-${clean}`;
+  const { error } = await db.storage.from('vittalit-public').upload(path, file, { contentType: file.type });
+  if (error) throw new Error(error.message);
+  return path;
+}
+const publicUrl = (p) => `${SUPABASE_URL}/storage/v1/object/public/vittalit-public/${p}`;
+
+async function loadTeam() {
+  const { data } = await db.from('vittalit_team').select('*').order('sort').order('name');
+  const box = $('#teamList');
+  box.innerHTML = (data || []).map((t) => `
+    <div class="item">
+      ${t.photo_path ? `<img src="${publicUrl(esc(t.photo_path))}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex:none">` : '<span class="ic">👤</span>'}
+      <div class="tx"><b>${esc(t.name)}</b><small>${esc(t.role)}${t.detail ? ' · ' + esc(t.detail) : ''}</small></div>
+      <div class="actions">
+        <button class="btn btn-soft btn-sm" data-tmvis="${t.id}" data-v="${t.visible}">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
+        <button class="btn btn-danger btn-sm" data-tmdel="${t.id}">Excluir</button>
+      </div>
+    </div>`).join('') || '<p class="empty">Nenhum profissional cadastrado — o site esconde a seção até você adicionar.</p>';
+
+  box.querySelectorAll('[data-tmvis]').forEach((b) => b.addEventListener('click', async () => {
+    await db.from('vittalit_team').update({ visible: b.dataset.v !== 'true' }).eq('id', b.dataset.tmvis);
+    loadTeam();
+  }));
+  box.querySelectorAll('[data-tmdel]').forEach((b) => b.addEventListener('click', async () => {
+    if (!confirm('Excluir este profissional do site?')) return;
+    await db.from('vittalit_team').delete().eq('id', b.dataset.tmdel);
+    loadTeam();
+  }));
+}
+
+$('#addTeamBtn').addEventListener('click', async () => {
+  const msg = $('#teamMsg'); const btn = $('#addTeamBtn');
+  const name = $('#tm_name').value.trim(); const role = $('#tm_role').value.trim();
+  if (!name || !role) { flash(msg, 'Preencha nome e especialidade.'); return; }
+  btn.disabled = true;
+  try {
+    let photo_path = null;
+    const f = $('#tm_photo').files[0];
+    if (f) photo_path = await uploadPublic(f, 'team');
+    const { error } = await db.from('vittalit_team').insert({
+      name, role, detail: $('#tm_detail').value.trim() || null, photo_path,
+    });
+    if (error) throw new Error(error.message);
+    ['tm_name', 'tm_role', 'tm_detail'].forEach((id) => $('#' + id).value = '');
+    $('#tm_photo').value = '';
+    flash(msg, 'Profissional adicionado! Já está visível no site.', true);
+    loadTeam();
+  } catch (e) { flash(msg, e.message); }
+  btn.disabled = false;
+});
+
+/* ---------- parceiros ---------- */
+async function loadPartners() {
+  const { data } = await db.from('vittalit_partners').select('*').order('sort').order('name');
+  const box = $('#partnerList');
+  box.innerHTML = (data || []).map((p) => `
+    <div class="item">
+      ${p.logo_path ? `<img src="${publicUrl(esc(p.logo_path))}" style="width:42px;height:42px;border-radius:10px;object-fit:contain;flex:none;background:#fff">` : '<span class="ic">🤝</span>'}
+      <div class="tx"><b>${esc(p.name)}</b><small>${p.detail ? esc(p.detail) : ''}${p.url ? ' · ' + esc(p.url) : ''}</small></div>
+      <div class="actions">
+        <button class="btn btn-soft btn-sm" data-ptvis="${p.id}" data-v="${p.visible}">${p.visible ? 'Ocultar' : 'Mostrar'}</button>
+        <button class="btn btn-danger btn-sm" data-ptdel="${p.id}">Excluir</button>
+      </div>
+    </div>`).join('') || '<p class="empty">Nenhum parceiro cadastrado — o site esconde a seção até você adicionar.</p>';
+
+  box.querySelectorAll('[data-ptvis]').forEach((b) => b.addEventListener('click', async () => {
+    await db.from('vittalit_partners').update({ visible: b.dataset.v !== 'true' }).eq('id', b.dataset.ptvis);
+    loadPartners();
+  }));
+  box.querySelectorAll('[data-ptdel]').forEach((b) => b.addEventListener('click', async () => {
+    if (!confirm('Excluir este parceiro do site?')) return;
+    await db.from('vittalit_partners').delete().eq('id', b.dataset.ptdel);
+    loadPartners();
+  }));
+}
+
+$('#addPartnerBtn').addEventListener('click', async () => {
+  const msg = $('#partnerMsg'); const btn = $('#addPartnerBtn');
+  const name = $('#pt_name').value.trim();
+  if (!name) { flash(msg, 'Informe o nome do parceiro.'); return; }
+  btn.disabled = true;
+  try {
+    let logo_path = null;
+    const f = $('#pt_logo').files[0];
+    if (f) logo_path = await uploadPublic(f, 'partners');
+    const { error } = await db.from('vittalit_partners').insert({
+      name, url: $('#pt_url').value.trim() || null, detail: $('#pt_detail').value.trim() || null, logo_path,
+    });
+    if (error) throw new Error(error.message);
+    ['pt_name', 'pt_url', 'pt_detail'].forEach((id) => $('#' + id).value = '');
+    $('#pt_logo').value = '';
+    flash(msg, 'Parceiro adicionado! Já está visível no site.', true);
+    loadPartners();
+  } catch (e) { flash(msg, e.message); }
+  btn.disabled = false;
+});
+
+/* ---------- ouvidoria ---------- */
+let ombFilter = 'todas';
+let ombRows = [];
+const OMB_STATUS = { nova: ['Nova', 'blue'], em_analise: ['Em análise', 'gray'], resolvida: ['Resolvida', 'green'] };
+
+document.querySelectorAll('[data-omb]').forEach((t) => t.addEventListener('click', () => {
+  ombFilter = t.dataset.omb;
+  document.querySelectorAll('[data-omb]').forEach((x) => x.classList.toggle('active', x === t));
+  renderOmbudsman();
+}));
+
+async function loadOmbudsman() {
+  const { data } = await db.from('vittalit_ombudsman').select('*').order('created_at', { ascending: false });
+  ombRows = data || [];
+  const novas = ombRows.filter((r) => r.status === 'nova').length;
+  const badge = $('#ombCount');
+  badge.style.display = novas ? '' : 'none';
+  badge.textContent = novas;
+  renderOmbudsman();
+}
+
+function renderOmbudsman() {
+  const box = $('#ombList');
+  const rows = ombRows.filter((r) => ombFilter === 'todas' || r.kind === ombFilter);
+  if (!rows.length) { box.innerHTML = '<p class="empty">Nenhuma mensagem por aqui. 🎉</p>'; return; }
+  box.innerHTML = rows.map((r) => {
+    const [label, color] = OMB_STATUS[r.status] || OMB_STATUS.nova;
+    return `
+    <div class="item" style="align-items:flex-start">
+      <span class="ic">${r.kind === 'denuncia' ? '🛡️' : '💬'}</span>
+      <div class="tx" style="white-space:normal">
+        <b style="white-space:normal">${r.kind === 'denuncia' ? 'Denúncia' : 'Ouvidoria'} · ${new Date(r.created_at).toLocaleString('pt-BR')}</b>
+        <small>${r.name ? 'De: ' + esc(r.name) : 'Anônimo'}${r.contact ? ' · retorno: ' + esc(r.contact) : ''}</small>
+        <p style="font-size:.9rem;margin-top:8px;white-space:pre-wrap">${esc(r.message)}</p>
+      </div>
+      <div class="actions" style="flex-direction:column;align-items:flex-end">
+        <span class="badge ${color}">${label}</span>
+        <select data-ombst="${r.id}" style="font-size:.8rem;padding:6px 8px;border-radius:8px;border:1.5px solid var(--line)">
+          ${Object.entries(OMB_STATUS).map(([k, [l]]) => `<option value="${k}" ${r.status === k ? 'selected' : ''}>${l}</option>`).join('')}
+        </select>
+        <button class="btn btn-danger btn-sm" data-ombdel="${r.id}">Excluir</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  box.querySelectorAll('[data-ombst]').forEach((s) => s.addEventListener('change', async () => {
+    await db.from('vittalit_ombudsman').update({ status: s.value }).eq('id', s.dataset.ombst);
+    loadOmbudsman();
+  }));
+  box.querySelectorAll('[data-ombdel]').forEach((b) => b.addEventListener('click', async () => {
+    if (!confirm('Excluir esta mensagem definitivamente?')) return;
+    await db.from('vittalit_ombudsman').delete().eq('id', b.dataset.ombdel);
+    loadOmbudsman();
+  }));
+}
+
 /* ---------- configurações do site ---------- */
-const SETTING_KEYS = ['whatsapp', 'phone', 'email', 'facebook', 'address'];
+const SETTING_KEYS = ['whatsapp', 'phone', 'email', 'instagram', 'facebook', 'address'];
 
 async function loadSettings() {
   const { data } = await db.from('vittalit_settings').select('key,value');

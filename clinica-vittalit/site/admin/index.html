@@ -44,6 +44,8 @@
   <main class="main">
     <div class="tabs">
       <button class="tab active" data-tab="patients">Pacientes</button>
+      <button class="tab" data-tab="team">Equipe &amp; parceiros</button>
+      <button class="tab" data-tab="ombudsman">Ouvidoria <span class="badge blue" id="ombCount" style="display:none"></span></button>
       <button class="tab" data-tab="settings">Site &amp; contato</button>
       <button class="tab" data-tab="account">Minha conta</button>
     </div>
@@ -66,6 +68,47 @@
       <div id="detailBox"></div>
     </section>
 
+    <!-- equipe e parceiros -->
+    <section class="panel" data-panel="team">
+      <div class="card">
+        <h3>Corpo técnico (aparece no site)</h3>
+        <div class="msg" id="teamMsg"></div>
+        <div class="grid3">
+          <div class="field"><label>Nome *</label><input id="tm_name" placeholder="Dr(a). Nome Sobrenome"></div>
+          <div class="field"><label>Especialidade / função *</label><input id="tm_role" placeholder="Ex.: Cardiologista · CRM 00000"></div>
+          <div class="field"><label>Foto (opcional)</label><input id="tm_photo" type="file" accept="image/*"></div>
+        </div>
+        <div class="field"><label>Detalhe (opcional)</label><input id="tm_detail" placeholder="Ex.: Especialista em transplante capilar"></div>
+        <button class="btn btn-primary btn-sm" id="addTeamBtn" style="width:auto">+ Adicionar profissional</button>
+        <div id="teamList" style="margin-top:18px"></div>
+      </div>
+
+      <div class="card">
+        <h3>Parceiros (aparece no site)</h3>
+        <div class="msg" id="partnerMsg"></div>
+        <div class="grid3">
+          <div class="field"><label>Nome *</label><input id="pt_name" placeholder="Nome do parceiro"></div>
+          <div class="field"><label>Site/link (opcional)</label><input id="pt_url" placeholder="https://…"></div>
+          <div class="field"><label>Logo (opcional)</label><input id="pt_logo" type="file" accept="image/*"></div>
+        </div>
+        <div class="field"><label>Descrição curta (opcional)</label><input id="pt_detail" placeholder="Ex.: Laboratório parceiro"></div>
+        <button class="btn btn-primary btn-sm" id="addPartnerBtn" style="width:auto">+ Adicionar parceiro</button>
+        <div id="partnerList" style="margin-top:18px"></div>
+      </div>
+    </section>
+
+    <!-- ouvidoria -->
+    <section class="panel" data-panel="ombudsman">
+      <div class="toolrow">
+        <div class="tabs" style="margin:0">
+          <button class="tab active" data-omb="todas">Todas</button>
+          <button class="tab" data-omb="ouvidoria">Ouvidoria</button>
+          <button class="tab" data-omb="denuncia">Denúncias</button>
+        </div>
+      </div>
+      <div class="card" id="ombList"></div>
+    </section>
+
     <!-- configurações do site -->
     <section class="panel" data-panel="settings">
       <div class="card">
@@ -76,6 +119,7 @@
           <div class="field"><label>WhatsApp (só números, com DDI+DDD)</label><input id="set_whatsapp" placeholder="553438132179"></div>
           <div class="field"><label>Telefone (como aparece no site)</label><input id="set_phone" placeholder="(34) 3813-2179"></div>
           <div class="field"><label>E-mail</label><input id="set_email"></div>
+          <div class="field"><label>Instagram (usuário, sem @)</label><input id="set_instagram" placeholder="clinica.vittalit"></div>
           <div class="field"><label>Facebook (usuário)</label><input id="set_facebook"></div>
         </div>
         <div class="field"><label>Endereço</label><input id="set_address"></div>
