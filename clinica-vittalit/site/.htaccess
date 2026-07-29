@@ -1,0 +1,14 @@
+# Clínica Vittalit — redirecionamento e segurança
+
+# desliga listagem de diretórios
+Options -Indexes
+
+RewriteEngine On
+
+# força HTTPS (301 permanente)
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# www -> sem www (endereço canônico único, melhor para Google e anúncios)
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
