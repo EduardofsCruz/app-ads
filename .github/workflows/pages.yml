@@ -3,7 +3,6 @@ name: Publicar ZooGuia no GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ["zooguia/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -28,6 +27,6 @@ jobs:
           enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: zooguia
+          path: .
       - id: deployment
         uses: actions/deploy-pages@v4
