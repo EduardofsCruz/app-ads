@@ -113,6 +113,22 @@
 
   <div id="toast" class="toast oculto"></div>
 
+  <!-- Ficha do animal -->
+  <div id="ficha-fundo" class="ficha-fundo oculto"></div>
+  <aside id="ficha" class="ficha oculto" role="dialog" aria-modal="true">
+    <button id="ficha-fechar" class="ficha-fechar" aria-label="Fechar">✕</button>
+    <div id="ficha-visu" class="ficha-visu"></div>
+    <h2 id="ficha-nome"></h2>
+    <div id="ficha-area" class="ficha-area"></div>
+    <div id="ficha-dist" class="ficha-dist"></div>
+    <p id="ficha-curio" class="ficha-curio"></p>
+    <div class="ficha-acoes">
+      <button id="ficha-som" class="btn-mini btn-som">🔊 Ouvir</button>
+      <button id="ficha-mapa" class="btn-mini btn-mapa">🗺️ Ver no mapa</button>
+      <button id="ficha-ar" class="btn-mini btn-ar">📸 Ir com o guia</button>
+    </div>
+  </aside>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="js/app.js"></script>

@@ -1,0 +1,1 @@
+Coloque aqui os sons reais: <id>.mp3. Sem o arquivo, o app toca um som sintetizado da categoria do animal.

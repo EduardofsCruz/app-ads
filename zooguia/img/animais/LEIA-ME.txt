@@ -1,0 +1,1 @@
+Coloque aqui as ilustrações dos animais: <id>.png (fundo transparente, ~512px). O app usa automaticamente; sem o arquivo, mostra o emoji.

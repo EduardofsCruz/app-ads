@@ -1,41 +1,313 @@
 {
   "zoo": {
     "nome": "Jardim Zoológico de Brasília",
-    "centro": { "lat": -15.8478, "lng": -47.9388 },
-    "entrada": { "lat": -15.8442, "lng": -47.9375 },
+    "centro": {
+      "lat": -15.8478,
+      "lng": -47.9388
+    },
+    "entrada": {
+      "lat": -15.8442,
+      "lng": -47.9375
+    },
     "aviso": "Coordenadas dos recintos obtidas dos marcadores do Google Maps. Novos recintos podem ser adicionados pelo modo 📌 Calibrar do app."
   },
   "animais": [
-    { "id": "elefante", "nome": "Elefante", "emoji": "🐘", "area": "Grandes Mamíferos", "lat": -15.845500, "lng": -47.942248, "curiosidade": "A tromba tem mais de 40 mil músculos — e nenhum osso." },
-    { "id": "elefante-africano", "nome": "Elefante Africano", "emoji": "🐘", "area": "Grandes Mamíferos", "lat": -15.846708, "lng": -47.937591, "curiosidade": "As orelhas enormes têm formato parecido com o mapa da África e ajudam a dissipar o calor." },
-    { "id": "hipopotamo", "nome": "Hipopótamo", "emoji": "🦛", "area": "Grandes Mamíferos", "lat": -15.846646, "lng": -47.941132, "curiosidade": "Passa até 16 horas por dia dentro da água para se proteger do sol." },
-    { "id": "rinoceronte", "nome": "Rinoceronte-branco-do-sul", "emoji": "🦏", "area": "Grandes Mamíferos", "lat": -15.848021, "lng": -47.939447, "curiosidade": "O chifre é feito de queratina, o mesmo material das nossas unhas." },
-    { "id": "zebra", "nome": "Zebra", "emoji": "🦓", "area": "Savana", "lat": -15.846202, "lng": -47.940542, "curiosidade": "Cada zebra tem um padrão de listras único no mundo." },
-    { "id": "onca", "nome": "Onças-pintadas", "emoji": "🐆", "area": "Felinos", "lat": -15.848111, "lng": -47.939920, "curiosidade": "Maior felino das Américas e símbolo do Cerrado brasileiro." },
-    { "id": "sucuarana", "nome": "Suçuarana (onça-parda)", "emoji": "🐈", "area": "Felinos", "lat": -15.848119, "lng": -47.940813, "curiosidade": "Também chamada de puma, é o mamífero com maior distribuição nas Américas." },
-    { "id": "lobo-guara", "nome": "Lobo-guará", "emoji": "🐺", "area": "Fauna do Cerrado", "lat": -15.849319, "lng": -47.937709, "curiosidade": "O lobo da nota de 200 reais! As pernas longas ajudam a enxergar por cima do capim do Cerrado." },
-    { "id": "cervo", "nome": "Cervos", "emoji": "🦌", "area": "Mamíferos", "lat": -15.847265, "lng": -47.937506, "curiosidade": "O cervo-do-pantanal é o maior cervídeo da América do Sul." },
-    { "id": "ariranha", "nome": "Ariranhas", "emoji": "🦦", "area": "Mamíferos Aquáticos", "lat": -15.847224, "lng": -47.936776, "curiosidade": "Vive em família e cada grupo tem um 'sotaque' próprio de assobios." },
-    { "id": "macacario", "nome": "Macacário", "emoji": "🐒", "area": "Primatas", "lat": -15.850447, "lng": -47.937302, "curiosidade": "Casa de várias espécies de macacos brasileiros — repare como cada uma se move de um jeito." },
-    { "id": "jacare", "nome": "Jacaré-do-Pantanal", "emoji": "🐊", "area": "Répteis", "lat": -15.847257, "lng": -47.940815, "curiosidade": "A temperatura do ninho define se os filhotes nascem machos ou fêmeas." },
-    { "id": "jacaretinga", "nome": "Jacaretinga", "emoji": "🐊", "area": "Répteis", "lat": -15.847417, "lng": -47.940636, "curiosidade": "Também chamado de jacaré-de-óculos, pela crista entre os olhos que parece um aro de óculos." },
-    { "id": "serpentario", "nome": "Serpentário", "emoji": "🐍", "area": "Répteis", "lat": -15.849680, "lng": -47.938761, "curiosidade": "A jiboia não é venenosa: ela abraça a presa para caçar." },
-    { "id": "aviario", "nome": "Aviário de Imersão", "emoji": "🦜", "area": "Aves", "lat": -15.846512, "lng": -47.939780, "curiosidade": "Aqui você entra no recinto e as aves voam livres ao seu redor!" },
-    { "id": "papagaios", "nome": "Papagaios e Araras", "emoji": "🦜", "area": "Aves", "lat": -15.847125, "lng": -47.939486, "curiosidade": "Araras escolhem um parceiro para a vida toda." },
-    { "id": "harpia", "nome": "Harpia e Araras", "emoji": "🦅", "area": "Aves", "lat": -15.848700, "lng": -47.936121, "curiosidade": "A harpia é a águia mais poderosa do mundo — as garras são maiores que as de um urso-pardo." },
-    { "id": "urubu-rei", "nome": "Urubu-rei e Aves de Rapina", "emoji": "🦅", "area": "Aves", "lat": -15.849164, "lng": -47.936132, "curiosidade": "É considerado o 'rei' porque os outros urubus esperam ele comer primeiro." },
-    { "id": "coruja", "nome": "Coruja", "emoji": "🦉", "area": "Aves", "lat": -15.849123, "lng": -47.934974, "curiosidade": "Consegue girar a cabeça até 270 graus." },
-    { "id": "ema", "nome": "Emas", "emoji": "🪶", "area": "Aves do Cerrado", "lat": -15.846161, "lng": -47.939662, "curiosidade": "É a maior ave do Brasil e pode correr a 60 km/h." },
-    { "id": "borboletario", "nome": "Borboletário", "emoji": "🦋", "area": "Invertebrados", "lat": -15.849752, "lng": -47.937012, "curiosidade": "Borboletas sentem o gosto das plantas com as patas." }
+    {
+      "id": "elefante",
+      "nome": "Elefante",
+      "emoji": "🐘",
+      "area": "Grandes Mamíferos",
+      "lat": -15.8455,
+      "lng": -47.942248,
+      "curiosidade": "A tromba tem mais de 40 mil músculos — e nenhum osso.",
+      "trilha": "pata-grande",
+      "som": "elefante"
+    },
+    {
+      "id": "elefante-africano",
+      "nome": "Elefante Africano",
+      "emoji": "🐘",
+      "area": "Grandes Mamíferos",
+      "lat": -15.846708,
+      "lng": -47.937591,
+      "curiosidade": "As orelhas enormes têm formato parecido com o mapa da África e ajudam a dissipar o calor.",
+      "trilha": "pata-grande",
+      "som": "elefante"
+    },
+    {
+      "id": "hipopotamo",
+      "nome": "Hipopótamo",
+      "emoji": "🦛",
+      "area": "Grandes Mamíferos",
+      "lat": -15.846646,
+      "lng": -47.941132,
+      "curiosidade": "Passa até 16 horas por dia dentro da água para se proteger do sol.",
+      "trilha": "pata-grande",
+      "som": "grunhido"
+    },
+    {
+      "id": "rinoceronte",
+      "nome": "Rinoceronte-branco-do-sul",
+      "emoji": "🦏",
+      "area": "Grandes Mamíferos",
+      "lat": -15.848021,
+      "lng": -47.939447,
+      "curiosidade": "O chifre é feito de queratina, o mesmo material das nossas unhas.",
+      "trilha": "pata-grande",
+      "som": "grunhido"
+    },
+    {
+      "id": "zebra",
+      "nome": "Zebra",
+      "emoji": "🦓",
+      "area": "Savana",
+      "lat": -15.846202,
+      "lng": -47.940542,
+      "curiosidade": "Cada zebra tem um padrão de listras único no mundo.",
+      "trilha": "casco",
+      "som": "grunhido"
+    },
+    {
+      "id": "onca",
+      "nome": "Onças-pintadas",
+      "emoji": "🐆",
+      "area": "Felinos",
+      "lat": -15.848111,
+      "lng": -47.93992,
+      "curiosidade": "Maior felino das Américas e símbolo do Cerrado brasileiro.",
+      "trilha": "pata",
+      "som": "felino"
+    },
+    {
+      "id": "sucuarana",
+      "nome": "Suçuarana (onça-parda)",
+      "emoji": "🐈",
+      "area": "Felinos",
+      "lat": -15.848119,
+      "lng": -47.940813,
+      "curiosidade": "Também chamada de puma, é o mamífero com maior distribuição nas Américas.",
+      "trilha": "pata",
+      "som": "felino"
+    },
+    {
+      "id": "lobo-guara",
+      "nome": "Lobo-guará",
+      "emoji": "🐺",
+      "area": "Fauna do Cerrado",
+      "lat": -15.849319,
+      "lng": -47.937709,
+      "curiosidade": "O lobo da nota de 200 reais! As pernas longas ajudam a enxergar por cima do capim do Cerrado.",
+      "trilha": "pata",
+      "som": "lobo"
+    },
+    {
+      "id": "cervo",
+      "nome": "Cervos",
+      "emoji": "🦌",
+      "area": "Mamíferos",
+      "lat": -15.847265,
+      "lng": -47.937506,
+      "curiosidade": "O cervo-do-pantanal é o maior cervídeo da América do Sul.",
+      "trilha": "casco",
+      "som": "grunhido"
+    },
+    {
+      "id": "ariranha",
+      "nome": "Ariranhas",
+      "emoji": "🦦",
+      "area": "Mamíferos Aquáticos",
+      "lat": -15.847224,
+      "lng": -47.936776,
+      "curiosidade": "Vive em família e cada grupo tem um 'sotaque' próprio de assobios.",
+      "trilha": "pata",
+      "som": "grunhido"
+    },
+    {
+      "id": "macacario",
+      "nome": "Macacário",
+      "emoji": "🐒",
+      "area": "Primatas",
+      "lat": -15.850447,
+      "lng": -47.937302,
+      "curiosidade": "Casa de várias espécies de macacos brasileiros — repare como cada uma se move de um jeito.",
+      "trilha": "pata",
+      "som": "macaco"
+    },
+    {
+      "id": "jacare",
+      "nome": "Jacaré-do-Pantanal",
+      "emoji": "🐊",
+      "area": "Répteis",
+      "lat": -15.847257,
+      "lng": -47.940815,
+      "curiosidade": "A temperatura do ninho define se os filhotes nascem machos ou fêmeas.",
+      "trilha": "pata",
+      "som": "hiss"
+    },
+    {
+      "id": "jacaretinga",
+      "nome": "Jacaretinga",
+      "emoji": "🐊",
+      "area": "Répteis",
+      "lat": -15.847417,
+      "lng": -47.940636,
+      "curiosidade": "Também chamado de jacaré-de-óculos, pela crista entre os olhos que parece um aro de óculos.",
+      "trilha": "pata",
+      "som": "hiss"
+    },
+    {
+      "id": "serpentario",
+      "nome": "Serpentário",
+      "emoji": "🐍",
+      "area": "Répteis",
+      "lat": -15.84968,
+      "lng": -47.938761,
+      "curiosidade": "A jiboia não é venenosa: ela abraça a presa para caçar.",
+      "trilha": "rasteja",
+      "som": "hiss"
+    },
+    {
+      "id": "aviario",
+      "nome": "Aviário de Imersão",
+      "emoji": "🦜",
+      "area": "Aves",
+      "lat": -15.846512,
+      "lng": -47.93978,
+      "curiosidade": "Aqui você entra no recinto e as aves voam livres ao seu redor!",
+      "trilha": "voa",
+      "som": "ave"
+    },
+    {
+      "id": "papagaios",
+      "nome": "Papagaios e Araras",
+      "emoji": "🦜",
+      "area": "Aves",
+      "lat": -15.847125,
+      "lng": -47.939486,
+      "curiosidade": "Araras escolhem um parceiro para a vida toda.",
+      "trilha": "voa",
+      "som": "ave"
+    },
+    {
+      "id": "harpia",
+      "nome": "Harpia e Araras",
+      "emoji": "🦅",
+      "area": "Aves",
+      "lat": -15.8487,
+      "lng": -47.936121,
+      "curiosidade": "A harpia é a águia mais poderosa do mundo — as garras são maiores que as de um urso-pardo.",
+      "trilha": "voa",
+      "som": "ave"
+    },
+    {
+      "id": "urubu-rei",
+      "nome": "Urubu-rei e Aves de Rapina",
+      "emoji": "🦅",
+      "area": "Aves",
+      "lat": -15.849164,
+      "lng": -47.936132,
+      "curiosidade": "É considerado o 'rei' porque os outros urubus esperam ele comer primeiro.",
+      "trilha": "voa",
+      "som": "ave"
+    },
+    {
+      "id": "coruja",
+      "nome": "Coruja",
+      "emoji": "🦉",
+      "area": "Aves",
+      "lat": -15.849123,
+      "lng": -47.934974,
+      "curiosidade": "Consegue girar a cabeça até 270 graus.",
+      "trilha": "voa",
+      "som": "coruja"
+    },
+    {
+      "id": "ema",
+      "nome": "Emas",
+      "emoji": "🪶",
+      "area": "Aves do Cerrado",
+      "lat": -15.846161,
+      "lng": -47.939662,
+      "curiosidade": "É a maior ave do Brasil e pode correr a 60 km/h.",
+      "trilha": "ave-chao",
+      "som": "grunhido"
+    },
+    {
+      "id": "borboletario",
+      "nome": "Borboletário",
+      "emoji": "🦋",
+      "area": "Invertebrados",
+      "lat": -15.849752,
+      "lng": -47.937012,
+      "curiosidade": "Borboletas sentem o gosto das plantas com as patas.",
+      "trilha": "borboleta",
+      "som": null
+    }
   ],
   "servicos": [
-    { "id": "sv-banheiro-1", "nome": "Banheiro", "emoji": "🚻", "area": "Ponto de apoio", "lat": -15.848493, "lng": -47.934062 },
-    { "id": "sv-banheiro-2", "nome": "Banheiro (Macacos)", "emoji": "🚻", "area": "Ponto de apoio", "lat": -15.847492, "lng": -47.940499 },
-    { "id": "sv-parquinho", "nome": "Parquinho", "emoji": "🛝", "area": "Ponto de apoio", "lat": -15.849144, "lng": -47.932978 },
-    { "id": "sv-parquinho-pequeno", "nome": "Parquinho Pequeno", "emoji": "🛝", "area": "Ponto de apoio", "lat": -15.848256, "lng": -47.935596 },
-    { "id": "sv-restaurante", "nome": "Restaurante", "emoji": "🍽️", "area": "Ponto de apoio", "lat": -15.849040, "lng": -47.939716 },
-    { "id": "sv-museu", "nome": "Museu de Ciências Naturais", "emoji": "🏛️", "area": "Atração", "lat": -15.850289, "lng": -47.938632 },
-    { "id": "sv-eletroposto-1", "nome": "Eletroposto", "emoji": "⚡", "area": "Ponto de apoio", "lat": -15.848953, "lng": -47.933353 },
-    { "id": "sv-eletroposto-2", "nome": "Estação de Recarga (Eletroposto)", "emoji": "⚡", "area": "Ponto de apoio", "lat": -15.850394, "lng": -47.939126 }
+    {
+      "id": "sv-banheiro-1",
+      "nome": "Banheiro",
+      "emoji": "🚻",
+      "area": "Ponto de apoio",
+      "lat": -15.848493,
+      "lng": -47.934062
+    },
+    {
+      "id": "sv-banheiro-2",
+      "nome": "Banheiro (Macacos)",
+      "emoji": "🚻",
+      "area": "Ponto de apoio",
+      "lat": -15.847492,
+      "lng": -47.940499
+    },
+    {
+      "id": "sv-parquinho",
+      "nome": "Parquinho",
+      "emoji": "🛝",
+      "area": "Ponto de apoio",
+      "lat": -15.849144,
+      "lng": -47.932978
+    },
+    {
+      "id": "sv-parquinho-pequeno",
+      "nome": "Parquinho Pequeno",
+      "emoji": "🛝",
+      "area": "Ponto de apoio",
+      "lat": -15.848256,
+      "lng": -47.935596
+    },
+    {
+      "id": "sv-restaurante",
+      "nome": "Restaurante",
+      "emoji": "🍽️",
+      "area": "Ponto de apoio",
+      "lat": -15.84904,
+      "lng": -47.939716
+    },
+    {
+      "id": "sv-museu",
+      "nome": "Museu de Ciências Naturais",
+      "emoji": "🏛️",
+      "area": "Atração",
+      "lat": -15.850289,
+      "lng": -47.938632
+    },
+    {
+      "id": "sv-eletroposto-1",
+      "nome": "Eletroposto",
+      "emoji": "⚡",
+      "area": "Ponto de apoio",
+      "lat": -15.848953,
+      "lng": -47.933353
+    },
+    {
+      "id": "sv-eletroposto-2",
+      "nome": "Estação de Recarga (Eletroposto)",
+      "emoji": "⚡",
+      "area": "Ponto de apoio",
+      "lat": -15.850394,
+      "lng": -47.939126
+    }
   ]
 }

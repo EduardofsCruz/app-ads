@@ -222,7 +222,11 @@ function renderLista(filtro = "") {
       ${ehApoio ? "" : `<button class="btn-fav ${estado.favoritos.has(a.id) ? "ativo" : ""}"
               data-id="${a.id}" data-acao="favorito"
               aria-label="Favoritar ${a.nome}">${estado.favoritos.has(a.id) ? "⭐" : "☆"}</button>`}
-      <span class="animal-emoji">${a.emoji}</span>
+      <span class="animal-visu">
+        <img class="animal-img" src="img/animais/${a.id}.png" alt="" loading="lazy"
+             onload="this.nextElementSibling.style.display='none'" onerror="this.remove()">
+        <span class="animal-emoji">${a.emoji}</span>
+      </span>
       <div class="animal-info">
         <div class="animal-nome">${a.nome} ${estado.ajustes[a.id] ? "📌" : ""}</div>
         <div class="animal-area">${a.area}</div>
@@ -232,8 +236,11 @@ function renderLista(filtro = "") {
         ${estado.modoCalibrar
           ? `<button class="btn-mini btn-calibrar" data-id="${a.id}" data-acao="calibrar">📌 Aqui</button>
              <button class="btn-mini btn-colar" data-id="${a.id}" data-acao="colar">🌐 Colar</button>`
-          : `<button class="btn-mini btn-mapa" data-id="${a.id}" data-acao="mapa">🗺️ Mapa</button>
-             <button class="btn-mini btn-ar" data-id="${a.id}" data-acao="ar">📸 AR</button>`}
+          : ehApoio
+            ? `<button class="btn-mini btn-mapa" data-id="${a.id}" data-acao="mapa">🗺️ Mapa</button>
+               <button class="btn-mini btn-ar" data-id="${a.id}" data-acao="ar">📸 AR</button>`
+            : `<button class="btn-mini btn-mapa" data-id="${a.id}" data-acao="info">ℹ️ Info</button>
+               <button class="btn-mini btn-ar" data-id="${a.id}" data-acao="ar">📸 AR</button>`}
       </div>
     </li>`).join("");
 }
@@ -258,6 +265,10 @@ document.getElementById("lista-animais").addEventListener("click", (ev) => {
     colarCoordenada(animal);
     return;
   }
+  if (btn.dataset.acao === "info") {
+    abrirFicha(animal);
+    return;
+  }
   definirAlvo(animal);
   if (btn.dataset.acao === "mapa") {
     mostrarView("mapa");
@@ -267,6 +278,116 @@ document.getElementById("lista-animais").addEventListener("click", (ev) => {
     iniciarAR();
   }
 });
+
+// ---------- ficha do animal ----------
+let fichaAnimal = null;
+function abrirFicha(a) {
+  fichaAnimal = a;
+  document.getElementById("ficha-visu").innerHTML = `
+    <img src="img/animais/${a.id}.png" alt="${a.nome}"
+         onload="this.nextElementSibling.style.display='none'" onerror="this.remove()">
+    <span class="ficha-emoji">${a.emoji}</span>`;
+  document.getElementById("ficha-nome").textContent = a.nome;
+  document.getElementById("ficha-area").textContent = a.area;
+  document.getElementById("ficha-dist").textContent =
+    estado.posicao ? `📍 a ${formataDist(distanciaMetros(estado.posicao, a))} de você` : "";
+  document.getElementById("ficha-curio").textContent = a.curiosidade ? `💡 ${a.curiosidade}` : "";
+  document.getElementById("ficha-som").style.display = a.som ? "" : "none";
+  document.getElementById("ficha").classList.remove("oculto");
+  document.getElementById("ficha-fundo").classList.remove("oculto");
+}
+function fecharFicha() {
+  document.getElementById("ficha").classList.add("oculto");
+  document.getElementById("ficha-fundo").classList.add("oculto");
+}
+document.getElementById("ficha-fechar").addEventListener("click", fecharFicha);
+document.getElementById("ficha-fundo").addEventListener("click", fecharFicha);
+document.getElementById("ficha-som").addEventListener("click", () => fichaAnimal && tocarSom(fichaAnimal));
+document.getElementById("ficha-mapa").addEventListener("click", () => {
+  if (!fichaAnimal) return;
+  definirAlvo(fichaAnimal);
+  fecharFicha();
+  mostrarView("mapa");
+  focarNoMapa(fichaAnimal);
+});
+document.getElementById("ficha-ar").addEventListener("click", () => {
+  if (!fichaAnimal) return;
+  definirAlvo(fichaAnimal);
+  fecharFicha();
+  mostrarView("ar");
+  iniciarAR();
+});
+
+// ---------- sons dos animais ----------
+let audioCtx = null;
+const somFalhou = new Set(); // ids sem arquivo em sons/
+function ctxAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+
+function tocarSom(a) {
+  if (!a || !a.som) return;
+  if (!somFalhou.has(a.id)) {
+    const audio = new Audio(`sons/${a.id}.mp3`); // gravação real, se existir
+    audio.volume = 0.8;
+    audio.play().catch(() => { somFalhou.add(a.id); sintetizarSom(a.som); });
+    audio.onerror = () => { somFalhou.add(a.id); sintetizarSom(a.som); };
+    return;
+  }
+  sintetizarSom(a.som);
+}
+
+function sintetizarSom(tipo) {
+  let ac;
+  try { ac = ctxAudio(); } catch { return; }
+  const t0 = ac.currentTime;
+  const master = ac.createGain();
+  master.gain.value = 0.18;
+  master.connect(ac.destination);
+
+  const osc = (forma, f0, dur, ini = 0, f1 = f0) => {
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = forma;
+    o.frequency.setValueAtTime(f0, t0 + ini);
+    o.frequency.linearRampToValueAtTime(f1, t0 + ini + dur);
+    g.gain.setValueAtTime(0, t0 + ini);
+    g.gain.linearRampToValueAtTime(1, t0 + ini + 0.03);
+    g.gain.linearRampToValueAtTime(0, t0 + ini + dur);
+    o.connect(g).connect(master);
+    o.start(t0 + ini);
+    o.stop(t0 + ini + dur + 0.05);
+  };
+  const ruido = (dur, ini = 0, freq = 900) => {
+    const n = ac.sampleRate * dur;
+    const buf = ac.createBuffer(1, n, ac.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) ch[i] = Math.random() * 2 - 1;
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    const filtro = ac.createBiquadFilter();
+    filtro.type = "bandpass";
+    filtro.frequency.value = freq;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.9, t0 + ini);
+    g.gain.linearRampToValueAtTime(0, t0 + ini + dur);
+    src.connect(filtro).connect(g).connect(master);
+    src.start(t0 + ini);
+  };
+
+  switch (tipo) {
+    case "felino":   osc("sawtooth", 85, 0.8, 0, 60); ruido(0.8, 0, 300); break;
+    case "lobo":     osc("sine", 320, 1.3, 0, 620); osc("sine", 620, 0.6, 1.3, 380); break;
+    case "elefante": osc("sawtooth", 240, 0.35, 0, 480); osc("sawtooth", 480, 0.45, 0.35, 520); break;
+    case "ave":      [0, 0.16, 0.32, 0.52].forEach((i, k) => osc("sine", 2100 + k * 180, 0.11, i, 2500 + k * 120)); break;
+    case "coruja":   osc("sine", 420, 0.35, 0, 380); osc("sine", 420, 0.5, 0.5, 340); break;
+    case "macaco":   [0, 0.2, 0.4, 0.6].forEach((i, k) => osc("square", k % 2 ? 700 : 520, 0.13, i)); break;
+    case "hiss":     ruido(0.9, 0, 2600); break;
+    default:         osc("sawtooth", 130, 0.25, 0, 95); osc("sawtooth", 120, 0.3, 0.3, 90); break;
+  }
+}
 
 document.getElementById("busca").addEventListener("input", (ev) => renderLista(ev.target.value));
 
@@ -301,9 +422,22 @@ document.getElementById("btn-exportar-ajustes").addEventListener("click", async 
   }
 });
 
+// imagem do animal-guia no AR (ilustração, com emoji como reserva)
+const guia = { id: null, img: null, temImg: false, inicio: 0, chegouTocado: false };
+function carregarGuia(a) {
+  guia.id = a.id;
+  guia.temImg = false;
+  guia.inicio = performance.now();
+  guia.chegouTocado = false;
+  const im = new Image();
+  im.onload = () => { if (guia.id === a.id) { guia.img = im; guia.temImg = true; } };
+  im.src = `img/animais/${a.id}.png`;
+}
+
 function definirAlvo(animal) {
   estado.alvo = animal;
   document.getElementById("ar-alvo").textContent = `${animal.emoji} ${animal.nome}`;
+  carregarGuia(animal);
   atualizarRota();
 }
 
@@ -641,6 +775,10 @@ async function iniciarAR() {
   video.srcObject = estado.streamCamera;
   document.getElementById("ar-intro").classList.add("oculto");
   stage.classList.remove("oculto");
+  if (estado.alvo) {
+    guia.inicio = performance.now(); // animação de "emergir" recomeça
+    tocarSom(estado.alvo);           // o guia se anuncia
+  }
   loopAR();
 }
 
@@ -680,8 +818,10 @@ function loopAR() {
         chegou.querySelector(".ar-emoji").textContent = estado.alvo.emoji;
         chegou.classList.remove("oculto");
         distEl.textContent = `Você chegou ao recinto! (${formataDist(d)})`;
+        if (!guia.chegouTocado) { guia.chegouTocado = true; tocarSom(estado.alvo); }
       } else {
         chegou.classList.add("oculto");
+        guia.chegouTocado = false;
         distEl.textContent = `📍 ${formataDist(d)} — siga a trilha`;
         desenharGuia(ctx, w, h, rumo, d);
       }
@@ -695,6 +835,49 @@ function loopAR() {
 function pontoCurva(a, b, c, u) {
   const v = 1 - u;
   return v * v * a + 2 * v * u * b + u * u * c;
+}
+
+// tangente (direção) da curva no ponto u, em radianos
+function anguloCurva(ax, bx, cx2, ay, by, cy2, u) {
+  const dx = 2 * (1 - u) * (bx - ax) + 2 * u * (cx2 - bx);
+  const dy = 2 * (1 - u) * (by - ay) + 2 * u * (cy2 - by);
+  return Math.atan2(dy, dx);
+}
+
+// pegadas específicas de cada espécie, desenhadas no chão
+function desenharPegada(ctx, tipo, s) {
+  ctx.fillStyle = "rgba(101, 67, 33, 0.85)";
+  if (tipo === "pata-grande") {
+    // pata redonda de elefante/rinoceronte/hipopótamo, com unhas
+    ctx.beginPath(); ctx.ellipse(0, 0, s * 0.42, s * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+    for (let i = -1; i <= 1; i++) {
+      ctx.beginPath(); ctx.ellipse(i * s * 0.28, -s * 0.55, s * 0.11, s * 0.14, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (tipo === "casco") {
+    // casco fendido de zebra/cervo
+    ctx.beginPath(); ctx.ellipse(-s * 0.16, 0, s * 0.14, s * 0.34, -0.15, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s * 0.16, 0, s * 0.14, s * 0.34, 0.15, 0, Math.PI * 2); ctx.fill();
+  } else if (tipo === "ave-chao") {
+    // três dedos de ema
+    ctx.strokeStyle = "rgba(101, 67, 33, 0.85)";
+    ctx.lineWidth = Math.max(2, s * 0.09);
+    ctx.lineCap = "round";
+    for (const ang of [-0.5, 0, 0.5]) {
+      ctx.beginPath();
+      ctx.moveTo(0, s * 0.3);
+      ctx.lineTo(Math.sin(ang) * s * 0.55, s * 0.3 - Math.cos(ang) * s * 0.75);
+      ctx.stroke();
+    }
+  } else {
+    // pata clássica: almofada + 4 dedos
+    ctx.beginPath(); ctx.ellipse(0, s * 0.1, s * 0.3, s * 0.26, 0, 0, Math.PI * 2); ctx.fill();
+    for (let i = 0; i < 4; i++) {
+      const a = -0.85 + i * 0.57;
+      ctx.beginPath();
+      ctx.ellipse(Math.sin(a) * s * 0.4, s * 0.1 - Math.cos(a) * s * 0.48, s * 0.1, s * 0.13, a, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 }
 
 function desenharGuia(ctx, w, h, rumoAlvo, dist) {
@@ -715,54 +898,139 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
   const rel = (rumoAlvo - heading + 540) % 360 - 180; // -180..180
   const alinhado = Math.abs(rel) < 20;
   const t = performance.now() / 1000;
+  const alvo = estado.alvo;
+  const tipo = alvo.trilha || "pata";
+  const voador = tipo === "voa" || tipo === "borboleta";
 
-  // a "ponte": trilha de patinhas que sai dos seus pés e se curva
-  // na direção do recinto; reta quando você está alinhado
+  // a "ponte": caminho que sai dos seus pés e se curva na direção do
+  // recinto; reto quando você está alinhado
   const desvio = Math.max(-1, Math.min(1, rel / 90));
   const iniX = cx, iniY = h * 0.92;
   const fimX = cx + desvio * w * 0.42;
-  const fimY = h * 0.34;
+  const fimY = h * 0.30;
   const ctrlX = cx + desvio * w * 0.12;
-  const ctrlY = h * 0.64;
+  const ctrlY = h * 0.62;
+  const P = (u) => [pontoCurva(iniX, ctrlX, fimX, u), pontoCurva(iniY, ctrlY, fimY, u)];
+  const A = (u) => anguloCurva(iniX, ctrlX, fimX, iniY, ctrlY, fimY, u);
 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  const passos = 8;
-  const fluxo = (t * 0.4) % (1 / passos); // patinhas "andam" rumo ao destino
-  for (let i = 0; i < passos; i++) {
-    const u = i / passos + fluxo;
-    if (u > 1) continue;
-    const x = pontoCurva(iniX, ctrlX, fimX, u);
-    const y = pontoCurva(iniY, ctrlY, fimY, u);
-    const s = 36 * (1 - u * 0.72); // perspectiva: encolhe ao longe
-    ctx.globalAlpha = 0.95 - u * 0.45;
-    ctx.font = `${s}px system-ui`;
-    ctx.fillText("🐾", x, y);
-  }
-  ctx.globalAlpha = 1;
 
-  // o animal-guia saltitando na ponta da trilha, te chamando
-  const pulo = Math.abs(Math.sin(t * 3.2)) * 16;
-  ctx.globalAlpha = 0.25;
-  ctx.fillStyle = "#000";
-  ctx.beginPath();
-  ctx.ellipse(fimX, fimY + 10, 26 - pulo * 0.4, 7, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-  ctx.font = "62px system-ui";
-  ctx.fillText(estado.alvo.emoji, fimX, fimY - 26 - pulo);
+  // ——— trilha no chão (ou rota de voo) ———
+  if (tipo === "rasteja") {
+    // rastro ondulado de serpente
+    ctx.strokeStyle = "rgba(101, 67, 33, 0.8)";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    for (let i = 0; i <= 60; i++) {
+      const u = i / 60;
+      const [x, y] = P(u);
+      const ang = A(u);
+      const larg = 16 * (1 - u * 0.7);
+      const onda = Math.sin(u * 26 - t * 6) * larg;
+      const px = x + Math.cos(ang + Math.PI / 2) * onda;
+      const py = y + Math.sin(ang + Math.PI / 2) * onda;
+      ctx.lineWidth = 5 * (1 - u * 0.6);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  } else if (voador) {
+    // rota de voo pontilhada, bem sutil
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.setLineDash([6, 10]);
+    ctx.lineDashOffset = -t * 40;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(iniX, iniY);
+    ctx.quadraticCurveTo(ctrlX, ctrlY, fimX, fimY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  } else {
+    // pegadas alternadas (esquerda/direita), viradas na direção do caminho
+    const passos = 9;
+    const fluxo = (t * 0.35) % (1 / passos);
+    for (let i = 0; i < passos; i++) {
+      const u = i / passos + fluxo;
+      if (u > 0.94) continue;
+      const [x, y] = P(u);
+      const ang = A(u);
+      const lado = (i % 2 ? 1 : -1) * 14 * (1 - u * 0.6);
+      const px = x + Math.cos(ang + Math.PI / 2) * lado;
+      const py = y + Math.sin(ang + Math.PI / 2) * lado;
+      const s = (tipo === "pata-grande" ? 30 : 24) * (1 - u * 0.68);
+      ctx.globalAlpha = 0.95 - u * 0.4;
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(ang + Math.PI / 2);
+      desenharPegada(ctx, tipo, s);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ——— o animal-guia: emerge da tela e caminha/voa à sua frente ———
+  const emergindo = Math.min(1, (performance.now() - guia.inicio) / 900);
+  const escEmerge = emergindo < 1
+    ? 1.7 - 0.7 * emergindo + Math.sin(emergindo * Math.PI) * 0.25 // entra grandão e assenta
+    : 1;
+
+  // caminha dos seus pés rumo ao destino, em ciclo: "vem, me segue!"
+  const ciclo = (t * 0.22) % 1;
+  const uG = 0.3 + ciclo * 0.62;
+  let [gx, gy] = P(uG);
+  const persp = 1 - uG * 0.55;               // encolhe ao se afastar
+  let tam = 150 * persp * escEmerge;         // BEM maior que antes
+
+  if (voador) {
+    const bat = Math.sin(t * (tipo === "borboleta" ? 14 : 8));
+    gy -= 60 * persp + Math.abs(bat) * 18 * persp;      // voa acima do caminho
+    if (tipo === "borboleta") gx += Math.sin(t * 5) * 30 * persp; // esvoaça
+    // asinhas: a imagem/emoji "bate" esticando na vertical
+    ctx.save();
+    ctx.translate(gx, gy);
+    ctx.scale(1, 0.82 + Math.abs(bat) * 0.25);
+    desenharAnimalGuia(ctx, 0, 0, tam);
+    ctx.restore();
+  } else {
+    const pulo = Math.abs(Math.sin(t * 3.4)) * 14 * persp;
+    // sombra no chão dá a sensação de profundidade
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = "#000";
+    ctx.beginPath();
+    ctx.ellipse(gx, gy + tam * 0.16, tam * 0.32 - pulo * 0.3, tam * 0.09, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.save();
+    ctx.translate(gx, gy - tam * 0.32 - pulo);
+    ctx.rotate(Math.sin(t * 3.4) * 0.07); // gingado de caminhada
+    desenharAnimalGuia(ctx, 0, 0, tam);
+    ctx.restore();
+  }
 
   ctx.fillStyle = "#fff";
   ctx.font = "bold 17px system-ui";
   ctx.shadowColor = "rgba(0,0,0,0.8)";
   ctx.shadowBlur = 6;
   ctx.fillText(
-    alinhado ? `✅ Siga o ${estado.alvo.emoji} em frente!`
+    alinhado ? `✅ Siga o ${alvo.emoji} em frente!`
              : (rel > 0 ? "↻ Gire para a direita" : "↺ Gire para a esquerda"),
-    cx, h * 0.24
+    cx, h * 0.2
   );
   ctx.shadowBlur = 0;
   ctx.textBaseline = "alphabetic";
+}
+
+// desenha a ilustração do animal (se existir) ou o emoji, centralizado
+function desenharAnimalGuia(ctx, x, y, tam) {
+  if (guia.temImg && guia.img) {
+    const prop = guia.img.width / guia.img.height;
+    const lw = prop >= 1 ? tam : tam * prop;
+    const lh = prop >= 1 ? tam / prop : tam;
+    ctx.drawImage(guia.img, x - lw / 2, y - lh / 2, lw, lh);
+  } else {
+    ctx.font = `${Math.round(tam * 0.62)}px system-ui`;
+    ctx.fillText(estado.alvo.emoji, x, y);
+  }
 }
 
 document.getElementById("btn-iniciar-ar").addEventListener("click", iniciarAR);
