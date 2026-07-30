@@ -2,7 +2,7 @@ name: Publicar ZooGuia no GitHub Pages
 
 on:
   push:
-    branches: [claude/zoo-pwa-virtual-reality-oy3179, main]
+    branches: [main]
     paths: ["zooguia/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
