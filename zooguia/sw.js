@@ -1,8 +1,8 @@
 /* Service Worker do ZooGuia — deixa o app instalável e funcionando offline.
  * Estratégia: app shell em cache na instalação; tiles do mapa e CDN em cache dinâmico. */
 
-const CACHE_SHELL = "zooguia-shell-v7";
-const CACHE_DINAMICO = "zooguia-dinamico-v7";
+const CACHE_SHELL = "zooguia-shell-v8";
+const CACHE_DINAMICO = "zooguia-dinamico-v8";
 
 const ARQUIVOS_SHELL = [
   "./",
@@ -45,8 +45,9 @@ self.addEventListener("fetch", (ev) => {
       if (cacheado) return cacheado;
       return fetch(req)
         .then((resp) => {
-          // guarda tiles do mapa e outros recursos para uso offline
-          if (resp.ok && (req.url.includes("tile.openstreetmap.org") || req.url.includes("unpkg.com"))) {
+          // guarda tiles do mapa, ilustrações e sons para uso offline
+          if (resp.ok && (req.url.includes("tile.openstreetmap.org") || req.url.includes("unpkg.com") ||
+              (req.url.startsWith(self.location.origin) && (req.url.includes("/img/") || req.url.includes("/sons/"))))) {
             const copia = resp.clone();
             caches.open(CACHE_DINAMICO).then((c) => c.put(req, copia));
           }

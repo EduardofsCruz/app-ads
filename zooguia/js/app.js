@@ -223,8 +223,9 @@ function renderLista(filtro = "") {
               data-id="${a.id}" data-acao="favorito"
               aria-label="Favoritar ${a.nome}">${estado.favoritos.has(a.id) ? "⭐" : "☆"}</button>`}
       <span class="animal-visu">
-        <img class="animal-img" src="img/animais/${a.id}.png" alt="" loading="lazy"
-             onload="this.nextElementSibling.style.display='none'" onerror="this.remove()">
+        <img class="animal-img" src="img/animais/${a.id}.webp" alt="" loading="lazy"
+             onload="this.nextElementSibling.style.display='none'"
+             onerror="if(!this.dataset.p){this.dataset.p=1;this.src='img/animais/${a.id}.png'}else{this.remove()}">
         <span class="animal-emoji">${a.emoji}</span>
       </span>
       <div class="animal-info">
@@ -284,8 +285,9 @@ let fichaAnimal = null;
 function abrirFicha(a) {
   fichaAnimal = a;
   document.getElementById("ficha-visu").innerHTML = `
-    <img src="img/animais/${a.id}.png" alt="${a.nome}"
-         onload="this.nextElementSibling.style.display='none'" onerror="this.remove()">
+    <img src="img/animais/${a.id}.webp" alt="${a.nome}"
+         onload="this.nextElementSibling.style.display='none'"
+         onerror="if(!this.dataset.p){this.dataset.p=1;this.src='img/animais/${a.id}.png'}else{this.remove()}">
     <span class="ficha-emoji">${a.emoji}</span>`;
   document.getElementById("ficha-nome").textContent = a.nome;
   document.getElementById("ficha-area").textContent = a.area;
@@ -422,16 +424,34 @@ document.getElementById("btn-exportar-ajustes").addEventListener("click", async 
   }
 });
 
-// imagem do animal-guia no AR (ilustração, com emoji como reserva)
-const guia = { id: null, img: null, temImg: false, inicio: 0, chegouTocado: false };
+// imagens do animal-guia no AR: quadros de caminhada (id.webp, id-2.webp…)
+// para animar tromba/asas/passos, e id-fim.webp para a pose de chegada
+const guia = { id: null, frames: [], fim: null, inicio: 0, chegouTocado: false };
 function carregarGuia(a) {
   guia.id = a.id;
-  guia.temImg = false;
+  guia.frames = [];
+  guia.fim = null;
   guia.inicio = performance.now();
   guia.chegouTocado = false;
-  const im = new Image();
-  im.onload = () => { if (guia.id === a.id) { guia.img = im; guia.temImg = true; } };
-  im.src = `img/animais/${a.id}.png`;
+
+  const f1 = new Image();
+  f1.onload = () => { if (guia.id === a.id) guia.frames[0] = f1; };
+  f1.onerror = () => {
+    const png = new Image();
+    png.onload = () => { if (guia.id === a.id) guia.frames[0] = png; };
+    png.src = `img/animais/${a.id}.png`;
+  };
+  f1.src = `img/animais/${a.id}.webp`;
+
+  [2, 3].forEach((n) => {
+    const im = new Image();
+    im.onload = () => { if (guia.id === a.id) guia.frames[n - 1] = im; };
+    im.src = `img/animais/${a.id}-${n}.webp`;
+  });
+
+  const fi = new Image();
+  fi.onload = () => { if (guia.id === a.id) guia.fim = fi; };
+  fi.src = `img/animais/${a.id}-fim.webp`;
 }
 
 function definirAlvo(animal) {
@@ -815,6 +835,15 @@ function loopAR() {
       const rumo = rumoGraus(estado.posicao, estado.alvo);
 
       if (d <= RAIO_CHEGADA_M) {
+        const fimImg = document.getElementById("ar-fim-img");
+        if (guia.fim) {
+          if (fimImg.src !== guia.fim.src) fimImg.src = guia.fim.src;
+          fimImg.classList.remove("oculto");
+          chegou.querySelector(".ar-emoji").style.display = "none";
+        } else {
+          fimImg.classList.add("oculto");
+          chegou.querySelector(".ar-emoji").style.display = "";
+        }
         chegou.querySelector(".ar-emoji").textContent = estado.alvo.emoji;
         chegou.classList.remove("oculto");
         distEl.textContent = `Você chegou ao recinto! (${formataDist(d)})`;
@@ -989,7 +1018,7 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
     ctx.save();
     ctx.translate(gx, gy);
     ctx.scale(1, 0.82 + Math.abs(bat) * 0.25);
-    desenharAnimalGuia(ctx, 0, 0, tam);
+    desenharAnimalGuia(ctx, tam, true, t);
     ctx.restore();
   } else {
     const pulo = Math.abs(Math.sin(t * 3.4)) * 14 * persp;
@@ -997,13 +1026,13 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
     ctx.globalAlpha = 0.28;
     ctx.fillStyle = "#000";
     ctx.beginPath();
-    ctx.ellipse(gx, gy + tam * 0.16, tam * 0.32 - pulo * 0.3, tam * 0.09, 0, 0, Math.PI * 2);
+    ctx.ellipse(gx, gy + 4, tam * 0.4 - pulo * 0.3, tam * 0.1, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
     ctx.save();
-    ctx.translate(gx, gy - tam * 0.32 - pulo);
-    ctx.rotate(Math.sin(t * 3.4) * 0.07); // gingado de caminhada
-    desenharAnimalGuia(ctx, 0, 0, tam);
+    ctx.translate(gx, gy - pulo);
+    ctx.rotate(Math.sin(t * 3.4) * 0.05); // gingado de caminhada
+    desenharAnimalGuia(ctx, tam, false, t);
     ctx.restore();
   }
 
@@ -1020,16 +1049,22 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
   ctx.textBaseline = "alphabetic";
 }
 
-// desenha a ilustração do animal (se existir) ou o emoji, centralizado
-function desenharAnimalGuia(ctx, x, y, tam) {
-  if (guia.temImg && guia.img) {
-    const prop = guia.img.width / guia.img.height;
-    const lw = prop >= 1 ? tam : tam * prop;
-    const lh = prop >= 1 ? tam / prop : tam;
-    ctx.drawImage(guia.img, x - lw / 2, y - lh / 2, lw, lh);
+// desenha a ilustração do animal (alternando quadros: tromba sobe e
+// desce, asas batem) ou o emoji como reserva. Animais de chão são
+// ancorados pelos pés (y = 0); voadores pelo centro.
+function desenharAnimalGuia(ctx, tam, voador, t) {
+  const quadros = guia.frames.filter(Boolean);
+  const img = quadros.length > 1
+    ? quadros[Math.floor(t * 2.2) % quadros.length]
+    : quadros[0];
+  if (img) {
+    const W = tam * 1.25;                       // largura fixa: o corpo não "pula"
+    const H = W * (img.height / img.width);     // a altura varia (tromba erguida)
+    if (voador) ctx.drawImage(img, -W / 2, -H / 2, W, H);
+    else ctx.drawImage(img, -W / 2, -H, W, H);
   } else {
     ctx.font = `${Math.round(tam * 0.62)}px system-ui`;
-    ctx.fillText(estado.alvo.emoji, x, y);
+    ctx.fillText(estado.alvo.emoji, 0, voador ? 0 : -tam * 0.28);
   }
 }
 
