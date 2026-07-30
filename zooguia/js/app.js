@@ -426,13 +426,35 @@ document.getElementById("btn-exportar-ajustes").addEventListener("click", async 
 
 // imagens do animal-guia no AR: quadros de caminhada (id.webp, id-2.webp…)
 // para animar tromba/asas/passos, e id-fim.webp para a pose de chegada
-const guia = { id: null, frames: [], fim: null, inicio: 0, chegouTocado: false };
+const guia = { id: null, frames: [], fim: null, video: null, videoEl: null, inicio: 0, chegouTocado: false };
 function carregarGuia(a) {
+  if (guia.videoEl) { guia.videoEl.pause(); guia.videoEl.removeAttribute("src"); }
   guia.id = a.id;
   guia.frames = [];
   guia.fim = null;
+  guia.video = null;
+  guia.videoEl = null;
   guia.inicio = performance.now();
   guia.chegouTocado = false;
+
+  // vídeo do animal "vivo" (id-video.webm/mp4), com fundo removido ao vivo
+  const vd = document.createElement("video");
+  vd.muted = true;
+  vd.loop = true;
+  vd.playsInline = true;
+  vd.setAttribute("playsinline", "");
+  vd.onloadeddata = () => {
+    if (guia.id !== a.id) return;
+    guia.video = vd;
+    vd.play().catch(() => {});
+  };
+  vd.onerror = () => {
+    if (vd.dataset.mp4) return;      // já tentou os dois formatos
+    vd.dataset.mp4 = "1";
+    vd.src = `img/animais/${a.id}-video.mp4`;
+  };
+  guia.videoEl = vd;
+  vd.src = `img/animais/${a.id}-video.webm`;
 
   const f1 = new Image();
   f1.onload = () => { if (guia.id === a.id) guia.frames[0] = f1; };
@@ -797,6 +819,7 @@ async function iniciarAR() {
   stage.classList.remove("oculto");
   if (estado.alvo) {
     guia.inicio = performance.now(); // animação de "emergir" recomeça
+    guia.videoEl?.play?.().catch(() => {});
     tocarSom(estado.alvo);           // o guia se anuncia
   }
   loopAR();
@@ -805,6 +828,7 @@ async function iniciarAR() {
 function pararAR() {
   if (estado.rafAR) cancelAnimationFrame(estado.rafAR);
   estado.rafAR = null;
+  guia.videoEl?.pause?.();
   if (estado.streamCamera) {
     estado.streamCamera.getTracks().forEach((t) => t.stop());
     estado.streamCamera = null;
@@ -1049,19 +1073,56 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
   ctx.textBaseline = "alphabetic";
 }
 
-// desenha a ilustração do animal (alternando quadros: tromba sobe e
-// desce, asas batem) ou o emoji como reserva. Animais de chão são
-// ancorados pelos pés (y = 0); voadores pelo centro.
+// remove o fundo branco de cada quadro do vídeo em tempo real
+const chromaCv = document.createElement("canvas");
+const chromaCtx = chromaCv.getContext("2d", { willReadFrequently: true });
+function quadroVideoSemFundo(video) {
+  const w = 320;
+  const h = Math.max(1, Math.round(w * video.videoHeight / video.videoWidth));
+  if (chromaCv.width !== w || chromaCv.height !== h) { chromaCv.width = w; chromaCv.height = h; }
+  chromaCtx.drawImage(video, 0, 0, w, h);
+  const dados = chromaCtx.getImageData(0, 0, w, h);
+  const p = dados.data;
+  for (let i = 0; i < p.length; i += 4) {
+    const mn = Math.min(p[i], p[i + 1], p[i + 2]);
+    if (mn > 232) p[i + 3] = 0;                                  // branco: some
+    else if (mn > 204) p[i + 3] = (232 - mn) * 9;                // transição suave
+  }
+  chromaCtx.putImageData(dados, 0, 0);
+  return chromaCv;
+}
+
+// desenha o animal-guia: vídeo "vivo" > quadros ilustrados (com
+// transição suave entre eles) > emoji. Animais de chão são ancorados
+// pelos pés (y = 0); voadores pelo centro.
 function desenharAnimalGuia(ctx, tam, voador, t) {
+  const desenhar = (fonte, fw, fh, alpha) => {
+    const W = tam * 1.3;                    // largura fixa: o corpo não "pula"
+    const H = W * (fh / fw);                // a altura varia (tromba erguida)
+    const a0 = ctx.globalAlpha;
+    ctx.globalAlpha = a0 * alpha;
+    if (voador) ctx.drawImage(fonte, -W / 2, -H / 2, W, H);
+    else ctx.drawImage(fonte, -W / 2, -H, W, H);
+    ctx.globalAlpha = a0;
+  };
+
+  if (guia.video && guia.video.readyState >= 2 && guia.video.videoWidth) {
+    const cv = quadroVideoSemFundo(guia.video);
+    desenhar(cv, cv.width, cv.height, 1);
+    return;
+  }
+
   const quadros = guia.frames.filter(Boolean);
-  const img = quadros.length > 1
-    ? quadros[Math.floor(t * 2.2) % quadros.length]
-    : quadros[0];
-  if (img) {
-    const W = tam * 1.25;                       // largura fixa: o corpo não "pula"
-    const H = W * (img.height / img.width);     // a altura varia (tromba erguida)
-    if (voador) ctx.drawImage(img, -W / 2, -H / 2, W, H);
-    else ctx.drawImage(img, -W / 2, -H, W, H);
+  if (quadros.length > 1) {
+    const fase = t * 2.2;
+    const i0 = Math.floor(fase) % quadros.length;
+    const i1 = (i0 + 1) % quadros.length;
+    const frac = fase - Math.floor(fase);
+    const mistura = frac > 0.6 ? (frac - 0.6) / 0.4 : 0;  // fusão no fim do quadro
+    desenhar(quadros[i0], quadros[i0].width, quadros[i0].height, 1 - mistura);
+    if (mistura > 0) desenhar(quadros[i1], quadros[i1].width, quadros[i1].height, mistura);
+  } else if (quadros.length === 1) {
+    desenhar(quadros[0], quadros[0].width, quadros[0].height, 1);
   } else {
     ctx.font = `${Math.round(tam * 0.62)}px system-ui`;
     ctx.fillText(estado.alvo.emoji, 0, voador ? 0 : -tam * 0.28);
