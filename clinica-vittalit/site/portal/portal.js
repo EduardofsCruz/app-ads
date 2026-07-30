@@ -44,6 +44,81 @@ $('#loginForm').addEventListener('submit', async (ev) => {
 
 $('#logoutBtn').addEventListener('click', async () => { await db.auth.signOut(); location.reload(); });
 
+/* ---------- recuperação de senha ---------- */
+const FN_URL = SUPABASE_URL + '/functions/v1/vittalit-admin';
+const fpMsg = (text, ok = false) => {
+  const m = $('#forgotMsg');
+  m.textContent = text;
+  m.className = 'msg show ' + (ok ? 'ok' : 'err');
+};
+const callPublicFn = async (payload) => {
+  const res = await fetch(FN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+};
+
+$('#forgotLink').addEventListener('click', (ev) => {
+  ev.preventDefault();
+  $('#loginForm').classList.add('hidden');
+  $('#authMsg').classList.remove('show');
+  $('#forgotBox').classList.remove('hidden');
+  $('#forgotStep1').classList.remove('hidden');
+  $('#forgotStep2').classList.add('hidden');
+  $('#forgotMsg').className = 'msg';
+  $('#fpCpf').value = $('#login').value;
+});
+$('#forgotBack').addEventListener('click', (ev) => {
+  ev.preventDefault();
+  $('#forgotBox').classList.add('hidden');
+  $('#loginForm').classList.remove('hidden');
+});
+
+$('#fpSendBtn').addEventListener('click', async () => {
+  const cpf = $('#fpCpf').value.replace(/\D/g, '');
+  if (cpf.length !== 11) { fpMsg('Digite o CPF completo (11 números).'); return; }
+  const btn = $('#fpSendBtn');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  const out = await callPublicFn({ action: 'forgot_request', cpf });
+  btn.disabled = false; btn.textContent = 'Enviar código';
+  if (out.error) { fpMsg(out.error); return; }
+  if (out.no_email) {
+    fpMsg('Este cadastro não possui e-mail. Ligue para a clínica e a recepção gera uma senha nova para você na hora.');
+    return;
+  }
+  $('#fpSentTo').innerHTML = `Enviamos um código de 6 dígitos para <b>${esc(out.masked_email)}</b>. Ele vale por 15 minutos.`;
+  $('#forgotStep1').classList.add('hidden');
+  $('#forgotStep2').classList.remove('hidden');
+  fpMsg('Código enviado! Confira também a caixa de spam.', true);
+});
+
+$('#fpSaveBtn').addEventListener('click', async () => {
+  const cpf = $('#fpCpf').value.replace(/\D/g, '');
+  const code = $('#fpCode').value.trim();
+  const p1 = $('#fpPass').value, p2 = $('#fpPass2').value;
+  if (!/^\d{6}$/.test(code)) { fpMsg('Digite o código de 6 números recebido por e-mail.'); return; }
+  if (p1.length < 6) { fpMsg('A nova senha deve ter ao menos 6 caracteres.'); return; }
+  if (p1 !== p2) { fpMsg('As senhas não conferem.'); return; }
+  const btn = $('#fpSaveBtn');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+  const out = await callPublicFn({ action: 'forgot_confirm', cpf, code, password: p1 });
+  btn.disabled = false; btn.textContent = 'Salvar nova senha';
+  if (out.error) { fpMsg(out.error); return; }
+  $('#forgotBox').classList.add('hidden');
+  $('#loginForm').classList.remove('hidden');
+  $('#login').value = cpf;
+  $('#password').value = '';
+  const m = $('#authMsg');
+  m.textContent = 'Senha alterada com sucesso! Entre com o CPF e a nova senha.';
+  m.className = 'msg show ok';
+});
+
 /* ---------- tabs ---------- */
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === t));

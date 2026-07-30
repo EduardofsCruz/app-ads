@@ -7,7 +7,7 @@
 <meta name="description" content="Acesse seus resultados de exames, plano alimentar e acompanhamento de gestação — Portal do Paciente da Clínica Vittalit.">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="../img/favicon.png">
-<link rel="stylesheet" href="../css/portal.css?v=3">
+<link rel="stylesheet" href="../css/portal.css?v=5">
 </head>
 <body>
 
@@ -26,10 +26,45 @@
       <div class="field">
         <label for="password">Senha</label>
         <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
-        <p class="hint">Recebeu sua senha na clínica. Esqueceu? Fale com a recepção: <a href="tel:+553438132179" style="color:var(--blue-deep);font-weight:700" data-phone-link>ligar</a>.</p>
+        <p class="hint">
+          <a href="#" id="forgotLink" style="color:var(--blue-deep);font-weight:700">Esqueci minha senha</a>
+          · ou fale com a recepção: <a href="tel:+553438132179" style="color:var(--blue-deep);font-weight:700" data-phone-link>ligar</a>
+        </p>
       </div>
       <button class="btn btn-primary" id="loginBtn" type="submit">Entrar</button>
     </form>
+
+    <!-- recuperação de senha -->
+    <div id="forgotBox" class="hidden">
+      <div class="msg" id="forgotMsg"></div>
+      <div id="forgotStep1">
+        <div class="field">
+          <label for="fpCpf">Digite seu CPF</label>
+          <input id="fpCpf" inputmode="numeric" placeholder="000.000.000-00">
+          <p class="hint">Enviaremos um código de 6 dígitos para o e-mail cadastrado na clínica.</p>
+        </div>
+        <button class="btn btn-primary" id="fpSendBtn" type="button">Enviar código</button>
+      </div>
+      <div id="forgotStep2" class="hidden">
+        <p class="hint" style="margin-bottom:12px" id="fpSentTo"></p>
+        <div class="field">
+          <label for="fpCode">Código recebido por e-mail</label>
+          <input id="fpCode" inputmode="numeric" maxlength="6" placeholder="000000" style="letter-spacing:.4em;text-align:center;font-weight:700">
+        </div>
+        <div class="field">
+          <label for="fpPass">Nova senha (mín. 6 caracteres)</label>
+          <input id="fpPass" type="password" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label for="fpPass2">Repetir a nova senha</label>
+          <input id="fpPass2" type="password" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" id="fpSaveBtn" type="button">Salvar nova senha</button>
+      </div>
+      <p class="hint" style="text-align:center;margin-top:14px">
+        <a href="#" id="forgotBack" style="color:var(--blue-deep);font-weight:700">← Voltar ao login</a>
+      </p>
+    </div>
     <p class="hint" style="text-align:center;margin-top:18px;color:var(--muted);font-size:.78rem">
       Ambiente seguro · dados protegidos conforme a LGPD<br>
       <a href="../index.html" style="color:var(--blue-deep);font-weight:700">← voltar ao site</a>
@@ -68,8 +103,8 @@
   </main>
 </div>
 
-<script src="../js/supabase.js?v=3"></script>
-<script src="../js/config.js?v=3"></script>
-<script src="portal.js?v=3"></script>
+<script src="../js/supabase.js?v=5"></script>
+<script src="../js/config.js?v=5"></script>
+<script src="portal.js?v=5"></script>
 </body>
 </html>
