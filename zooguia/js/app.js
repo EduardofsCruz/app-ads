@@ -682,8 +682,8 @@ function loopAR() {
         distEl.textContent = `Você chegou ao recinto! (${formataDist(d)})`;
       } else {
         chegou.classList.add("oculto");
-        distEl.textContent = `📍 ${formataDist(d)} — siga a seta`;
-        desenharSeta(ctx, w, h, rumo, d);
+        distEl.textContent = `📍 ${formataDist(d)} — siga a trilha`;
+        desenharGuia(ctx, w, h, rumo, d);
       }
     }
     estado.rafAR = requestAnimationFrame(frame);
@@ -691,7 +691,13 @@ function loopAR() {
   frame();
 }
 
-function desenharSeta(ctx, w, h, rumoAlvo, dist) {
+// ponto numa curva de Bézier quadrática (0 <= u <= 1)
+function pontoCurva(a, b, c, u) {
+  const v = 1 - u;
+  return v * v * a + 2 * v * u * b + u * u * c;
+}
+
+function desenharGuia(ctx, w, h, rumoAlvo, dist) {
   // ângulo relativo entre onde o celular aponta e onde o animal está
   const heading = estado.heading;
   const cx = w / 2, cy = h / 2;
@@ -706,36 +712,57 @@ function desenharSeta(ctx, w, h, rumoAlvo, dist) {
     return;
   }
 
-  let rel = (rumoAlvo - heading + 540) % 360 - 180; // -180..180
+  const rel = (rumoAlvo - heading + 540) % 360 - 180; // -180..180
   const alinhado = Math.abs(rel) < 20;
+  const t = performance.now() / 1000;
 
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(rel * Math.PI / 180);
-  ctx.fillStyle = alinhado ? "rgba(76,175,80,0.95)" : "rgba(255,202,40,0.95)";
-  ctx.strokeStyle = "rgba(0,0,0,0.4)";
-  ctx.lineWidth = 3;
-  const s = Math.min(w, h) * 0.16;
-  ctx.beginPath();               // seta apontando "para cima" antes da rotação
-  ctx.moveTo(0, -s);
-  ctx.lineTo(s * 0.6, s * 0.5);
-  ctx.lineTo(0, s * 0.15);
-  ctx.lineTo(-s * 0.6, s * 0.5);
-  ctx.closePath();
+  // a "ponte": trilha de patinhas que sai dos seus pés e se curva
+  // na direção do recinto; reta quando você está alinhado
+  const desvio = Math.max(-1, Math.min(1, rel / 90));
+  const iniX = cx, iniY = h * 0.92;
+  const fimX = cx + desvio * w * 0.42;
+  const fimY = h * 0.34;
+  const ctrlX = cx + desvio * w * 0.12;
+  const ctrlY = h * 0.64;
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const passos = 8;
+  const fluxo = (t * 0.4) % (1 / passos); // patinhas "andam" rumo ao destino
+  for (let i = 0; i < passos; i++) {
+    const u = i / passos + fluxo;
+    if (u > 1) continue;
+    const x = pontoCurva(iniX, ctrlX, fimX, u);
+    const y = pontoCurva(iniY, ctrlY, fimY, u);
+    const s = 36 * (1 - u * 0.72); // perspectiva: encolhe ao longe
+    ctx.globalAlpha = 0.95 - u * 0.45;
+    ctx.font = `${s}px system-ui`;
+    ctx.fillText("🐾", x, y);
+  }
+  ctx.globalAlpha = 1;
+
+  // o animal-guia saltitando na ponta da trilha, te chamando
+  const pulo = Math.abs(Math.sin(t * 3.2)) * 16;
+  ctx.globalAlpha = 0.25;
+  ctx.fillStyle = "#000";
+  ctx.beginPath();
+  ctx.ellipse(fimX, fimY + 10, 26 - pulo * 0.4, 7, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.stroke();
-  ctx.restore();
+  ctx.globalAlpha = 1;
+  ctx.font = "62px system-ui";
+  ctx.fillText(estado.alvo.emoji, fimX, fimY - 26 - pulo);
 
   ctx.fillStyle = "#fff";
   ctx.font = "bold 17px system-ui";
-  ctx.textAlign = "center";
   ctx.shadowColor = "rgba(0,0,0,0.8)";
   ctx.shadowBlur = 6;
   ctx.fillText(
-    alinhado ? "✅ É por aqui! Siga em frente" : (rel > 0 ? "↻ Gire para a direita" : "↺ Gire para a esquerda"),
-    cx, cy + Math.min(w, h) * 0.16 + 40
+    alinhado ? `✅ Siga o ${estado.alvo.emoji} em frente!`
+             : (rel > 0 ? "↻ Gire para a direita" : "↺ Gire para a esquerda"),
+    cx, h * 0.24
   );
   ctx.shadowBlur = 0;
+  ctx.textBaseline = "alphabetic";
 }
 
 document.getElementById("btn-iniciar-ar").addEventListener("click", iniciarAR);

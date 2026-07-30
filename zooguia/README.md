@@ -15,7 +15,7 @@ até o recinto escolhido.
 | 📋 **Animais** | Lista com busca; mostra a distância de cada animal até você, ordenada do mais perto para o mais longe. Toque na ⭐ para favoritar (fica salvo no aparelho) e use os filtros "Favoritos" e "🚻 Apoio" (banheiros, bebedouros, restaurante, parquinho) |
 | 🧭 **Roteiro** | Escolha com antecedência os animais que quer ver (ou importe os favoritos) e o app calcula a **melhor ordem de visita** — vizinho mais próximo + refinamento 2-opt, partindo da entrada ou da sua posição GPS. Marque cada parada como "✅ Visitei" e o app indica a próxima |
 | 🗺️ **Mapa** | Mapa real (OpenStreetMap) com os recintos, pontos de apoio, sua posição, linha até o destino e a rota do roteiro com paradas numeradas — ou o **mapa ilustrado oficial** do zoo, com zoom |
-| 📸 **Radar AR** | Câmera aberta com uma seta sobreposta que gira conforme você vira o celular; ao chegar a menos de 30 m, o animal "aparece" na tela comemorando 🎉 |
+| 📸 **Radar AR** | Câmera aberta com uma trilha animada de patinhas 🐾 que se estende na direção do recinto — com o próprio animal saltitando na ponta, guiando o caminho. A trilha se curva quando você precisa virar e fica reta quando está alinhado; a menos de 30 m, o animal "aparece" na tela comemorando 🎉 |
 
 Favoritos, roteiro e paradas visitadas ficam salvos no celular (localStorage) —
 a família pode montar o plano em casa e usar no dia seguinte no zoo.
