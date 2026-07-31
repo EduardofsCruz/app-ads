@@ -1026,11 +1026,11 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
     ? 1.7 - 0.7 * emergindo + Math.sin(emergindo * Math.PI) * 0.25 // entra grandão e assenta
     : 1;
 
-  // caminha dos seus pés rumo ao destino, ajustando posição conforme direção
-  // se alinhado: anda para frente; se desalinhado: anda para o lado indicando a direção
+  // caminha da jaula (distante) em direção aos seus pés, guiando o visitante
+  // se alinhado: anda para frente (recuando); se desalinhado: anda para o lado indicando a direção
   const ciclo = (t * 0.22) % 1;
   const desvioDir = rel > 0 ? 0.15 : (rel < 0 ? -0.15 : 0); // sai para direita/esquerda conforme ângulo
-  const uG = 0.3 + ciclo * 0.62 + desvioDir * ciclo;
+  const uG = 0.92 - ciclo * 0.62 + desvioDir * ciclo;
   let [gx, gy] = P(uG);
   const persp = 1 - uG * 0.55;               // encolhe ao se afastar
   let tam = 300 * persp * escEmerge;         // dobro do tamanho anterior
