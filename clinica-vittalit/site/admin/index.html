@@ -6,7 +6,7 @@
 <title>Painel Administrativo — Clínica Vittalit</title>
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="../img/favicon.png">
-<link rel="stylesheet" href="../css/portal.css?v=6">
+<link rel="stylesheet" href="../css/portal.css?v=7">
 </head>
 <body>
 
@@ -165,6 +165,27 @@
   </div>
 </div>
 
+<!-- modal: ficha clínica -->
+<div class="modal-bg" id="recModal">
+  <div class="modal">
+    <button class="x" data-close>✕</button>
+    <h3>Ficha clínica <span class="badge gray" style="margin-left:6px">uso interno</span></h3>
+    <p style="color:var(--muted);font-size:.85rem;margin:-8px 0 16px" id="recWho"></p>
+    <div class="msg" id="recMsg"></div>
+    <div class="grid2">
+      <div class="field"><label>Tipo sanguíneo</label><input id="rc_blood" placeholder="Ex.: O+"></div>
+      <div class="field"><label>Convênio / plano</label><input id="rc_plan" placeholder="Particular, Unimed…"></div>
+    </div>
+    <div class="field"><label>Alergias</label><input id="rc_allergies" placeholder="Medicamentos, alimentos…"></div>
+    <div class="field"><label>Medicações em uso</label><input id="rc_meds"></div>
+    <div class="field"><label>Condições / comorbidades</label><input id="rc_cond" placeholder="Hipertensão, diabetes…"></div>
+    <div class="field"><label>Contato de emergência</label><input id="rc_emerg" placeholder="Nome e telefone"></div>
+    <div class="field"><label>Observações gerais</label><input id="rc_notes"></div>
+    <p class="hint" id="recUpdated" style="margin-bottom:12px"></p>
+    <button class="btn btn-primary" id="saveRecBtn">Salvar ficha clínica</button>
+  </div>
+</div>
+
 <!-- modal: exame (novo/editar) -->
 <div class="modal-bg" id="examModal">
   <div class="modal">
@@ -231,8 +252,8 @@
   </div>
 </div>
 
-<script src="../js/supabase.js?v=6"></script>
-<script src="../js/config.js?v=6"></script>
-<script src="admin.js?v=6"></script>
+<script src="../js/supabase.js?v=7"></script>
+<script src="../js/config.js?v=7"></script>
+<script src="admin.js?v=7"></script>
 </body>
 </html>

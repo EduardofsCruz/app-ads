@@ -191,14 +191,22 @@ async function openPatient(id) {
   (files || []).forEach((f) => { (filesByExam[f.exam_id] ||= []).push(f); });
   currentExams = (exams || []).map((e) => ({ ...e, files: filesByExam[e.id] || [] }));
 
+  const recFilled = !!rec && ['blood_type', 'allergies', 'medications', 'conditions', 'health_plan', 'emergency_contact', 'notes']
+    .some((k) => (rec[k] || '').trim());
+
   const age = current.birth_date
     ? Math.floor((Date.now() - new Date(current.birth_date + 'T12:00:00').getTime()) / 31557600000) + ' anos'
     : '';
 
   box.innerHTML = `
     <div class="card">
-      <h3>${esc(current.full_name)}</h3>
-      <p style="color:var(--muted);font-size:.88rem">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <h3 style="margin:0">${esc(current.full_name)}</h3>
+        <button class="btn btn-soft btn-sm" id="recBtn" style="width:auto">
+          🩺 Ficha clínica${recFilled ? ' <span class="badge green" style="margin-left:6px">preenchida</span>' : ''}
+        </button>
+      </div>
+      <p style="color:var(--muted);font-size:.88rem;margin-top:6px">
         CPF ${fmtCpf(current.cpf)}${current.phone ? ' · ' + esc(current.phone) : ''}${current.birth_date ? ' · ' + fmtDate(current.birth_date) + (age ? ` (${age})` : '') : ''}
       </p>
       <div class="field" style="margin-top:14px">
@@ -225,24 +233,6 @@ async function openPatient(id) {
         <button class="btn btn-primary btn-sm" id="newExamBtn" style="width:auto">+ Novo exame</button>
       </div>
       <div id="examRows">${renderExamRows()}</div>
-    </div>
-
-    <div class="card">
-      <h3>Ficha clínica <span class="badge gray" style="margin-left:6px">uso interno</span></h3>
-      <p style="color:var(--muted);font-size:.84rem;margin-bottom:14px">Informações de apoio ao atendimento. O paciente não vê estes campos.</p>
-      <div class="grid3">
-        <div class="field"><label>Tipo sanguíneo</label><input id="rc_blood" value="${esc(rec?.blood_type || '')}" placeholder="Ex.: O+"></div>
-        <div class="field"><label>Convênio / plano</label><input id="rc_plan" value="${esc(rec?.health_plan || '')}" placeholder="Particular, Unimed…"></div>
-        <div class="field"><label>Contato de emergência</label><input id="rc_emerg" value="${esc(rec?.emergency_contact || '')}" placeholder="Nome e telefone"></div>
-      </div>
-      <div class="grid2">
-        <div class="field"><label>Alergias</label><input id="rc_allergies" value="${esc(rec?.allergies || '')}" placeholder="Medicamentos, alimentos…"></div>
-        <div class="field"><label>Medicações em uso</label><input id="rc_meds" value="${esc(rec?.medications || '')}"></div>
-      </div>
-      <div class="field"><label>Condições / comorbidades</label><input id="rc_cond" value="${esc(rec?.conditions || '')}" placeholder="Hipertensão, diabetes…"></div>
-      <div class="field"><label>Observações gerais</label><input id="rc_notes" value="${esc(rec?.notes || '')}"></div>
-      <button class="btn btn-primary btn-sm" id="saveRecBtn" style="width:auto">Salvar ficha clínica</button>
-      ${rec?.updated_at ? `<p class="hint" style="margin-top:8px">Última atualização: ${new Date(rec.updated_at).toLocaleString('pt-BR')}</p>` : ''}
     </div>
 
     `;
@@ -278,9 +268,24 @@ async function openPatient(id) {
 
   $('#newExamBtn').addEventListener('click', () => openExamModal(null));
 
-  $('#saveRecBtn').addEventListener('click', async () => {
-    const btn = $('#saveRecBtn');
-    btn.disabled = true;
+  $('#recBtn').addEventListener('click', () => {
+    $('#recWho').textContent = `${current.full_name} — informações de apoio ao atendimento. O paciente não vê estes campos.`;
+    $('#rc_blood').value = rec?.blood_type || '';
+    $('#rc_plan').value = rec?.health_plan || '';
+    $('#rc_emerg').value = rec?.emergency_contact || '';
+    $('#rc_allergies').value = rec?.allergies || '';
+    $('#rc_meds').value = rec?.medications || '';
+    $('#rc_cond').value = rec?.conditions || '';
+    $('#rc_notes').value = rec?.notes || '';
+    $('#recUpdated').textContent = rec?.updated_at
+      ? 'Última atualização: ' + new Date(rec.updated_at).toLocaleString('pt-BR') : '';
+    $('#recMsg').classList.remove('show');
+    $('#recModal').classList.add('show');
+  });
+
+  $('#saveRecBtn').onclick = async () => {
+    const btn = $('#saveRecBtn'); const msg = $('#recMsg');
+    btn.disabled = true; btn.textContent = 'Salvando…';
     const { error } = await db.from('vittalit_records').upsert({
       patient_id: current.id,
       blood_type: $('#rc_blood').value.trim() || null,
@@ -293,9 +298,11 @@ async function openPatient(id) {
       updated_by: me.id,
       updated_at: new Date().toISOString(),
     });
-    btn.disabled = false;
-    flash(dmsg, error ? error.message : 'Ficha clínica salva!', !error);
-  });
+    btn.disabled = false; btn.textContent = 'Salvar ficha clínica';
+    if (error) { flash(msg, error.message); return; }
+    flash(msg, 'Ficha clínica salva!', true);
+    setTimeout(() => { $('#recModal').classList.remove('show'); openPatient(current.id); }, 900);
+  };
 
   /* etiquetas de perfil — salvam ao clicar */
   const saveTags = async (tags) => {
