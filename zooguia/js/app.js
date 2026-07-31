@@ -1,6 +1,19 @@
 /* ZooGuia Brasília — protótipo PWA de navegação até os animais
  * Lista + favoritos + roteiro otimizado + mapa (Leaflet) + "Radar AR". */
 
+// @@@ ARQUITETURA ESCALÁVEL DE ASSETS @@@
+// Carrega config de CDN e fallbacks
+const ASSETS = (() => {
+  // Fallback se config/assets.js não estiver carregado
+  return window.ASSETS_CONFIG || {
+    cdn: { primary: "", fallback: "./img/animais" },
+    audio: { format: "mp3", fallback: "synthetic" },
+    video: { formats: ["webm", "mp4"], autoplay: true, loop: true, muted: true },
+    images: { formats: ["webp", "png", "jpg"] },
+    cache: { strategy: "cache-first", ttl: 86400 * 7 },
+  };
+})();
+
 const estado = {
   animais: [],
   servicos: [],
@@ -427,7 +440,7 @@ document.getElementById("btn-exportar-ajustes").addEventListener("click", async 
 // imagens do animal-guia no AR: quadros de caminhada (id.webp, id-2.webp…)
 // para animar tromba/asas/passos, e id-fim.webp para a pose de chegada
 const guia = { id: null, frames: [], fim: null, video: null, videoEl: null, inicio: 0, chegouTocado: false };
-function carregarGuia(a) {
+async function carregarGuia(a) {
   if (guia.videoEl) { guia.videoEl.pause(); guia.videoEl.removeAttribute("src"); }
   guia.id = a.id;
   guia.frames = [];
@@ -437,30 +450,40 @@ function carregarGuia(a) {
   guia.inicio = performance.now();
   guia.chegouTocado = false;
 
-  // vídeo do animal "vivo" (id-guia.mp4, ou id-video.webm/mp4), com fundo removido ao vivo
+  // ——— Carregamento escalável de vídeo com fallbacks ———
   const vd = document.createElement("video");
-  vd.muted = true;
-  vd.loop = true;
+  vd.muted = ASSETS.video.muted;
+  vd.loop = ASSETS.video.loop;
   vd.playsInline = true;
   vd.setAttribute("playsinline", "");
+
   vd.onloadeddata = () => {
     if (guia.id !== a.id) return;
     guia.video = vd;
     vd.play().catch(() => {});
   };
+
+  // Tenta múltiplas URLs em ordem de prioridade
+  const urlsCandidatas = [
+    `img/animais/${a.id}-guia.mp4`,      // vídeo novo (se existe)
+    `img/animais/${a.id}-video.webm`,    // formato comprimido
+    `img/animais/${a.id}-video.mp4`,     // fallback padrão
+    `img/animais/${a.id}.webm`,          // alternativa
+  ];
+
+  let urlAtual = 0;
   vd.onerror = () => {
-    // Tenta em ordem: guia.mp4 → video.mp4 → video.webm
-    const tentativa = (vd.dataset.tentativa || 0) * 1;
-    if (tentativa === 0) {
-      vd.dataset.tentativa = "1";
-      vd.src = `img/animais/${a.id}-guia.mp4`; // novo vídeo prioritário
-    } else if (tentativa === 1) {
-      vd.dataset.tentativa = "2";
-      vd.src = `img/animais/${a.id}-video.mp4`;
+    urlAtual++;
+    if (urlAtual < urlsCandidatas.length) {
+      vd.src = urlsCandidatas[urlAtual];
+    } else {
+      console.warn(`⚠️ Nenhum vídeo encontrado para ${a.id}`);
+      // Se nenhum vídeo funciona, continua com frames estáticos
     }
   };
+
   guia.videoEl = vd;
-  vd.src = `img/animais/${a.id}-video.webm`;
+  vd.src = urlsCandidatas[0];  // Começa com primeira opção
 
   const f1 = new Image();
   f1.onload = () => { if (guia.id === a.id) guia.frames[0] = f1; };
