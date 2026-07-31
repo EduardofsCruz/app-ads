@@ -969,6 +969,26 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
+  // ——— caminho inteligente com feedback colorido ———
+  // verde (certo) → amarelo → laranja → vermelho (errado)
+  const corDoDesvio = (() => {
+    const absRel = Math.abs(rel);
+    if (absRel < 20) return [0, 200, 100]; // verde
+    if (absRel < 50) return [255, 200, 0]; // amarelo
+    if (absRel < 90) return [255, 130, 0]; // laranja
+    return [255, 50, 50]; // vermelho
+  })();
+  ctx.strokeStyle = `rgba(${corDoDesvio[0]}, ${corDoDesvio[1]}, ${corDoDesvio[2]}, 0.4)`;
+  ctx.lineWidth = 14;
+  ctx.lineCap = "round";
+  ctx.setLineDash([8, 8]);
+  ctx.lineDashOffset = -t * 20;
+  ctx.beginPath();
+  ctx.moveTo(iniX, iniY);
+  ctx.quadraticCurveTo(ctrlX, ctrlY, fimX, fimY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
   // ——— trilha no chão (ou rota de voo) ———
   if (tipo === "rasteja") {
     // rastro ondulado de serpente
@@ -1027,12 +1047,14 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
     ? 1.7 - 0.7 * emergindo + Math.sin(emergindo * Math.PI) * 0.25 // entra grandão e assenta
     : 1;
 
-  // caminha dos seus pés rumo ao destino, em ciclo: "vem, me segue!"
+  // caminha dos seus pés rumo ao destino, ajustando posição conforme direção
+  // se alinhado: anda para frente; se desalinhado: anda para o lado indicando a direção
   const ciclo = (t * 0.22) % 1;
-  const uG = 0.3 + ciclo * 0.62;
+  const desvioDir = rel > 0 ? 0.15 : (rel < 0 ? -0.15 : 0); // sai para direita/esquerda conforme ângulo
+  const uG = 0.3 + ciclo * 0.62 + desvioDir * ciclo;
   let [gx, gy] = P(uG);
   const persp = 1 - uG * 0.55;               // encolhe ao se afastar
-  let tam = 150 * persp * escEmerge;         // BEM maior que antes
+  let tam = 300 * persp * escEmerge;         // dobro do tamanho anterior
 
   if (voador) {
     const bat = Math.sin(t * (tipo === "borboleta" ? 14 : 8));
@@ -1045,17 +1067,21 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
     desenharAnimalGuia(ctx, tam, true, t);
     ctx.restore();
   } else {
-    const pulo = Math.abs(Math.sin(t * 3.4)) * 14 * persp;
+    // movimento suave de caminhada: corpo sobe/desce levemente
+    const passo = Math.sin(t * 2.8) * 8 * persp;  // mais suave e fluido
+    const sombra = Math.max(0, Math.cos(t * 2.8)) * 0.25; // sombra acompanha movimento
     // sombra no chão dá a sensação de profundidade
-    ctx.globalAlpha = 0.28;
+    ctx.globalAlpha = 0.20 + sombra;
     ctx.fillStyle = "#000";
     ctx.beginPath();
-    ctx.ellipse(gx, gy + 4, tam * 0.4 - pulo * 0.3, tam * 0.1, 0, 0, Math.PI * 2);
+    ctx.ellipse(gx, gy + 4, tam * 0.35, tam * 0.08, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
     ctx.save();
-    ctx.translate(gx, gy - pulo);
-    ctx.rotate(Math.sin(t * 3.4) * 0.05); // gingado de caminhada
+    ctx.translate(gx, gy + passo);
+    // gingado suave que muda com a direção (sway left/right when turning)
+    const gingado = Math.sin(t * 2.8) * 0.03 + rel * 0.0008;
+    ctx.rotate(gingado);
     desenharAnimalGuia(ctx, tam, false, t);
     ctx.restore();
   }
@@ -1084,9 +1110,17 @@ function quadroVideoSemFundo(video) {
   const dados = chromaCtx.getImageData(0, 0, w, h);
   const p = dados.data;
   for (let i = 0; i < p.length; i += 4) {
-    const mn = Math.min(p[i], p[i + 1], p[i + 2]);
-    if (mn > 232) p[i + 3] = 0;                                  // branco: some
-    else if (mn > 204) p[i + 3] = (232 - mn) * 9;                // transição suave
+    const r = p[i], g = p[i + 1], b = p[i + 2];
+    const mn = Math.min(r, g, b);
+    // Detectar verde (g > 150 e g > r+20 e g > b+20) ou branco/cinza
+    const ehVerde = g > 150 && g > r + 20 && g > b + 20;
+    const ehBranco = mn > 220;
+    const ehCinzaClaro = r > 180 && g > 180 && b > 180 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15;
+    if (ehVerde || ehBranco || ehCinzaClaro) {
+      p[i + 3] = 0;
+    } else if ((g > 120 && g > r + 10 && g > b + 10) || mn > 180) {
+      p[i + 3] = Math.round(Math.max(0, 100 - (g - 120) * 3)); // transição suave
+    }
   }
   chromaCtx.putImageData(dados, 0, 0);
   return chromaCv;
