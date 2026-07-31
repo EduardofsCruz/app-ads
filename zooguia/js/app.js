@@ -1070,10 +1070,27 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
 const chromaCv = document.createElement("canvas");
 const chromaCtx = chromaCv.getContext("2d", { willReadFrequently: true });
 function quadroVideoSemFundo(video) {
-  const w = 320;
-  const h = Math.max(1, Math.round(w * video.videoHeight / video.videoWidth));
+  const rotacao90 = true; // ROTACIONA 90° se vídeo estiver landscape em portrait
+  let w = 320;
+  let h = Math.max(1, Math.round(w * video.videoHeight / video.videoWidth));
+
+  // Se vídeo landscape e tela portrait, inverte dimensões
+  if (rotacao90 && video.videoWidth > video.videoHeight) {
+    [w, h] = [h, w];
+  }
+
   if (chromaCv.width !== w || chromaCv.height !== h) { chromaCv.width = w; chromaCv.height = h; }
-  chromaCtx.drawImage(video, 0, 0, w, h);
+
+  chromaCtx.save();
+  if (rotacao90 && video.videoWidth > video.videoHeight) {
+    // Rotaciona e centraliza
+    chromaCtx.translate(w / 2, h / 2);
+    chromaCtx.rotate(Math.PI / 2);
+    chromaCtx.drawImage(video, -video.videoHeight / 2, -video.videoWidth / 2, video.videoHeight, video.videoWidth);
+  } else {
+    chromaCtx.drawImage(video, 0, 0, w, h);
+  }
+  chromaCtx.restore();
   const dados = chromaCtx.getImageData(0, 0, w, h);
   const p = dados.data;
   for (let i = 0; i < p.length; i += 4) {
