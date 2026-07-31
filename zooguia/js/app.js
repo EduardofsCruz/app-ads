@@ -1018,27 +1018,6 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
     ctx.quadraticCurveTo(ctrlX, ctrlY, fimX, fimY);
     ctx.stroke();
     ctx.setLineDash([]);
-  } else {
-    // pegadas alternadas (esquerda/direita), viradas na direção do caminho
-    const passos = 9;
-    const fluxo = (t * 0.35) % (1 / passos);
-    for (let i = 0; i < passos; i++) {
-      const u = i / passos + fluxo;
-      if (u > 0.94) continue;
-      const [x, y] = P(u);
-      const ang = A(u);
-      const lado = (i % 2 ? 1 : -1) * 14 * (1 - u * 0.6);
-      const px = x + Math.cos(ang + Math.PI / 2) * lado;
-      const py = y + Math.sin(ang + Math.PI / 2) * lado;
-      const s = (tipo === "pata-grande" ? 30 : 24) * (1 - u * 0.68);
-      ctx.globalAlpha = 0.95 - u * 0.4;
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate(ang + Math.PI / 2);
-      desenharPegada(ctx, tipo, s);
-      ctx.restore();
-    }
-    ctx.globalAlpha = 1;
   }
 
   // ——— o animal-guia: emerge da tela e caminha/voa à sua frente ———
