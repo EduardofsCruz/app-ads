@@ -154,6 +154,16 @@ input, select, textarea { font: inherit; color: var(--ink); }
 .badge.green { color: var(--ok); background: rgba(22,163,74,.11); }
 .badge.gray { color: var(--muted); background: rgba(91,113,134,.12); }
 
+/* etiquetas de perfil do paciente */
+.tagbtn {
+  font-size: .78rem; font-weight: 700; padding: 7px 14px; border-radius: 999px;
+  background: var(--bg); color: var(--muted); border: 1.5px solid var(--line);
+  transition: all .2s;
+}
+.tagbtn:hover { border-color: rgba(0,174,239,.45); color: var(--blue-deep); }
+.tagbtn.on { background: var(--grad); color: #fff; border-color: transparent; box-shadow: var(--shadow-blue); }
+.tagbtn.add { border-style: dashed; }
+
 .empty { text-align: center; color: var(--muted); padding: 38px 16px; font-weight: 600; font-size: .92rem; }
 .empty svg { margin: 0 auto 10px; opacity: .5; }
 

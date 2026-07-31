@@ -6,7 +6,7 @@
 <title>Painel Administrativo — Clínica Vittalit</title>
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="../img/favicon.png">
-<link rel="stylesheet" href="../css/portal.css?v=4">
+<link rel="stylesheet" href="../css/portal.css?v=6">
 </head>
 <body>
 
@@ -165,34 +165,74 @@
   </div>
 </div>
 
-<!-- modal: novo exame -->
+<!-- modal: exame (novo/editar) -->
 <div class="modal-bg" id="examModal">
   <div class="modal">
     <button class="x" data-close>✕</button>
-    <h3>Novo resultado de exame</h3>
+    <h3 id="examModalTitle">Novo exame</h3>
     <div class="msg" id="examMsg"></div>
+
     <div class="grid2">
-      <div class="field"><label>Título do exame *</label><input id="ex_title" placeholder="Ex.: Ultrassom obstétrico com Doppler"></div>
-      <div class="field"><label>Categoria</label>
+      <div class="field">
+        <label>Tipo de exame *</label>
         <select id="ex_cat">
-          <option value="ultrassom">Ultrassom</option>
-          <option value="cardiologico">Cardiológico</option>
+          <option value="ultrassom">Ultrassonografia</option>
+          <option value="cardiologico">Cardiológico (ECG, Holter, MAPA, Eco)</option>
           <option value="ginecologico">Ginecológico</option>
           <option value="laboratorial">Laboratorial</option>
+          <option value="imagem">Imagem (raio-x, tomografia…)</option>
+          <option value="espirometria">Espirometria</option>
+          <option value="endoscopia">Endoscopia / Videolaringoscopia</option>
+          <option value="alergico">Teste alérgico</option>
+          <option value="polissonografia">Polissonografia</option>
           <option value="outros" selected>Outros</option>
         </select>
       </div>
-      <div class="field"><label>Data do exame</label><input id="ex_date" type="date"></div>
-      <div class="field"><label>Semana de gestação (se aplicável)</label><input id="ex_week" type="number" min="1" max="45" placeholder="Ex.: 22"></div>
+      <div class="field">
+        <label>Nome do exame *</label>
+        <input id="ex_title" placeholder="Ex.: Ultrassom de abdome total" list="examSuggestions">
+        <datalist id="examSuggestions"></datalist>
+      </div>
+      <div class="field"><label>Data de realização *</label><input id="ex_date" type="date"></div>
+      <div class="field"><label>Data de entrega ao paciente</label><input id="ex_delivered" type="date"></div>
+      <div class="field"><label>Médico solicitante</label><input id="ex_req_doctor" placeholder="Dr(a). que pediu o exame"></div>
+      <div class="field"><label>Profissional executante</label><input id="ex_performed_by" placeholder="Quem realizou/laudou"></div>
     </div>
-    <div class="field"><label>Observações (visível para o paciente)</label><input id="ex_notes"></div>
-    <div class="field"><label>Arquivo PDF do resultado</label><input id="ex_file" type="file" accept="application/pdf,image/*"></div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Situação</label>
+        <select id="ex_status">
+          <option value="aguardando">Aguardando resultado</option>
+          <option value="disponivel" selected>Resultado disponível</option>
+          <option value="entregue">Entregue ao paciente</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Visível no portal do paciente?</label>
+        <select id="ex_released">
+          <option value="yes" selected>Sim — paciente já pode ver</option>
+          <option value="no">Não — manter oculto por enquanto</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field"><label>Observações para o paciente</label><input id="ex_notes" placeholder="Aparece no portal, abaixo do nome do exame"></div>
+    <div class="field"><label>Anotações internas (só a equipe vê)</label><input id="ex_internal"></div>
+
+    <div class="field">
+      <label>Arquivos do resultado (pode selecionar vários)</label>
+      <input id="ex_file" type="file" accept="application/pdf,image/*" multiple>
+      <p class="hint">PDFs ou imagens. Você pode anexar mais arquivos a este exame depois.</p>
+    </div>
+    <div id="ex_existing_files"></div>
+
     <button class="btn btn-primary" id="saveExamBtn">Salvar exame</button>
   </div>
 </div>
 
-<script src="../js/supabase.js?v=4"></script>
-<script src="../js/config.js?v=4"></script>
-<script src="admin.js?v=4"></script>
+<script src="../js/supabase.js?v=6"></script>
+<script src="../js/config.js?v=6"></script>
+<script src="admin.js?v=6"></script>
 </body>
 </html>

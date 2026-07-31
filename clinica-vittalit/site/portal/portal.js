@@ -8,8 +8,10 @@ const authScreen = $('#authScreen');
 const appScreen = $('#appScreen');
 
 const CAT_LABEL = {
-  ultrassom: 'Ultrassom', cardiologico: 'Cardiológico', ginecologico: 'Ginecológico',
-  laboratorial: 'Laboratorial', outros: 'Exame',
+  ultrassom: 'Ultrassonografia', cardiologico: 'Cardiológico', ginecologico: 'Ginecológico',
+  laboratorial: 'Laboratorial', imagem: 'Imagem', espirometria: 'Espirometria',
+  endoscopia: 'Endoscopia', alergico: 'Teste alérgico', polissonografia: 'Polissonografia',
+  outros: 'Exame',
 };
 const ICONS = {
   exam: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>',
@@ -159,94 +161,57 @@ async function boot() {
   $('#hello').textContent = `Olá, ${first}! 👋`;
 
   loadExams();
-  loadPregnancy();
 }
 
 async function loadExams() {
   const box = $('#examList');
-  const { data: exams, error } = await db.from('vittalit_exams')
-    .select('*').eq('patient_id', me.id).order('exam_date', { ascending: false });
+  const [{ data: exams, error }, { data: files }] = await Promise.all([
+    db.from('vittalit_exams').select('*').eq('patient_id', me.id)
+      .eq('released', true).order('exam_date', { ascending: false }),
+    db.from('vittalit_exam_files').select('*').eq('patient_id', me.id).order('created_at'),
+  ]);
 
   if (error || !exams?.length) {
     box.innerHTML = `<div class="card"><p class="empty">${ICONS.exam}<br>Você ainda não tem resultados disponíveis.<br><small>Assim que a clínica liberar um exame, ele aparece aqui.</small></p></div>`;
     return;
   }
-  box.innerHTML = `<div class="card">` + exams.map((e) => `
-    <div class="item">
-      <span class="ic">${iconFor(e.category)}</span>
-      <div class="tx">
-        <b>${esc(e.title)}</b>
-        <small>${CAT_LABEL[e.category] || 'Exame'} · ${fmtDate(e.exam_date)}${e.gestation_week ? ` · ${e.gestation_week} semanas` : ''}${e.notes ? ` · ${esc(e.notes)}` : ''}</small>
-      </div>
-      ${e.file_path
-        ? `<div class="actions"><button class="btn btn-soft btn-sm" data-dl="${esc(e.file_path)}">Baixar PDF</button></div>`
-        : '<span class="badge gray">sem arquivo</span>'}
-    </div>`).join('') + `</div>`;
+
+  const byExam = {};
+  (files || []).forEach((f) => { (byExam[f.exam_id] ||= []).push(f); });
+
+  box.innerHTML = `<div class="card">` + exams.map((e) => {
+    const list = byExam[e.id] || [];
+    const meta = [
+      `Realizado em ${fmtDate(e.exam_date)}`,
+      e.delivered_at ? `disponível desde ${fmtDate(e.delivered_at)}` : null,
+      e.requesting_doctor ? `solicitado por ${esc(e.requesting_doctor)}` : null,
+    ].filter(Boolean).join(' · ');
+    const btns = list.length
+      ? `<div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:9px">${list.map((f) => `
+          <button class="btn btn-soft btn-sm" data-dl="${esc(f.file_path)}">
+            ⬇ ${esc(f.file_name.length > 30 ? f.file_name.slice(0, 28) + '…' : f.file_name)}
+          </button>`).join('')}</div>`
+      : `<p class="hint" style="margin-top:6px">Resultado em digitação — em breve disponível aqui.</p>`;
+    return `
+      <div class="item" style="align-items:flex-start">
+        <span class="ic">${iconFor(e.category)}</span>
+        <div class="tx" style="white-space:normal">
+          <b style="white-space:normal">${esc(e.title)}</b>
+          <small>${CAT_LABEL[e.category] || 'Exame'} · ${meta}</small>
+          ${e.notes ? `<small style="display:block;margin-top:3px">${esc(e.notes)}</small>` : ''}
+          ${btns}
+        </div>
+        ${list.length ? `<span class="badge green">${list.length} arquivo${list.length > 1 ? 's' : ''}</span>` : '<span class="badge gray">aguardando</span>'}
+      </div>`;
+  }).join('') + `</div>`;
 
   box.querySelectorAll('[data-dl]').forEach((b) => b.addEventListener('click', async () => {
-    b.disabled = true; b.textContent = 'Gerando…';
+    const label = b.textContent;
+    b.disabled = true; b.textContent = 'Abrindo…';
     const { data, error: err } = await db.storage.from('vittalit').createSignedUrl(b.dataset.dl, 3600);
-    b.disabled = false; b.textContent = 'Baixar PDF';
+    b.disabled = false; b.textContent = label;
     if (err || !data?.signedUrl) { alert('Não foi possível gerar o link agora. Tente novamente.'); return; }
     window.open(data.signedUrl, '_blank');
-  }));
-}
-
-async function loadPregnancy() {
-  const { data: pregs } = await db.from('vittalit_pregnancies')
-    .select('*').eq('patient_id', me.id).eq('active', true).limit(1);
-  const preg = pregs?.[0];
-  if (!preg) return; // aba fica oculta
-
-  $('#pregTab').classList.remove('hidden');
-  const box = $('#pregView');
-
-  // idade gestacional: a partir da DUM, ou DPP - 280 dias
-  const start = preg.lmp_date
-    ? new Date(preg.lmp_date + 'T12:00:00')
-    : preg.due_date ? new Date(new Date(preg.due_date + 'T12:00:00').getTime() - 280 * 864e5) : null;
-
-  let heroHtml = '';
-  if (start) {
-    const days = Math.max(0, Math.floor((Date.now() - start.getTime()) / 864e5));
-    const weeks = Math.min(Math.floor(days / 7), 42);
-    const rest = days % 7;
-    const pct = Math.min(100, Math.round((days / 280) * 100));
-    const due = preg.due_date ? new Date(preg.due_date + 'T12:00:00') : new Date(start.getTime() + 280 * 864e5);
-    heroHtml = `
-      <div class="preg-hero">
-        <p>Sua gestação</p>
-        <b>${weeks} semanas${rest ? ` e ${rest} dia${rest > 1 ? 's' : ''}` : ''} 🤰</b>
-        <div class="preg-bar"><i style="width:${pct}%"></i></div>
-        <div class="preg-meta"><span>Início</span><span>${pct}% — parto previsto: ${due.toLocaleDateString('pt-BR')}</span></div>
-      </div>`;
-  }
-
-  const { data: examsRaw } = await db.from('vittalit_exams')
-    .select('*').eq('patient_id', me.id).not('gestation_week', 'is', null)
-    .order('gestation_week', { ascending: true });
-  const exams = (examsRaw || []).filter((e) => e.gestation_week);
-
-  const tl = exams?.length ? `
-    <div class="card">
-      <h3>Linha do tempo dos seus ultrassons</h3>
-      <div class="tl">${exams.map((e) => `
-        <div class="tl-item">
-          <div class="item" style="margin:0">
-            <span class="ic">${iconFor(e.category)}</span>
-            <div class="tx"><b>${e.gestation_week} semanas — ${esc(e.title)}</b><small>${fmtDate(e.exam_date)}${e.notes ? ` · ${esc(e.notes)}` : ''}</small></div>
-            ${e.file_path ? `<button class="btn btn-soft btn-sm" data-dl="${esc(e.file_path)}">Ver</button>` : ''}
-          </div>
-        </div>`).join('')}
-      </div>
-    </div>` :
-    `<div class="card"><p class="empty">Os ultrassons da sua gestação aparecerão aqui, semana a semana. 💙</p></div>`;
-
-  box.innerHTML = heroHtml + tl + (preg.notes ? `<div class="card"><h3>Orientações da equipe</h3><p style="font-size:.94rem">${esc(preg.notes)}</p></div>` : '');
-
-  box.querySelectorAll('[data-dl]').forEach((b) => b.addEventListener('click', async () => {
-    const { data } = await db.storage.from('vittalit').createSignedUrl(b.dataset.dl, 3600);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
   }));
 }
 

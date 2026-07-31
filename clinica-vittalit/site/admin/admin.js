@@ -106,7 +106,11 @@ function renderPatients() {
   box.innerHTML = list.map((p) => `
     <div class="item click" data-id="${p.id}">
       <span class="ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-      <div class="tx"><b>${esc(p.full_name)}</b><small>CPF ${fmtCpf(p.cpf)}${p.phone ? ' · ' + esc(p.phone) : ''}</small></div>
+      <div class="tx">
+        <b>${esc(p.full_name)}</b>
+        <small>CPF ${fmtCpf(p.cpf)}${p.phone ? ' · ' + esc(p.phone) : ''}</small>
+        ${(p.tags || []).length ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">${p.tags.map((t) => `<span class="badge blue">${esc(t)}</span>`).join('')}</div>` : ''}
+      </div>
       <span class="badge blue">abrir ›</span>
     </div>`).join('');
   box.querySelectorAll('[data-id]').forEach((el) => el.addEventListener('click', () => openPatient(el.dataset.id)));
@@ -142,7 +146,35 @@ $('#createPatientBtn').addEventListener('click', async () => {
   setTimeout(() => $('#patientModal').classList.remove('show'), 1800);
 });
 
+/* ---------- catálogo de exames ---------- */
+const CATS = {
+  ultrassom: 'Ultrassonografia', cardiologico: 'Cardiológico', ginecologico: 'Ginecológico',
+  laboratorial: 'Laboratorial', imagem: 'Imagem', espirometria: 'Espirometria',
+  endoscopia: 'Endoscopia', alergico: 'Teste alérgico', polissonografia: 'Polissonografia',
+  outros: 'Outros',
+};
+const STATUS = {
+  aguardando: ['Aguardando resultado', 'gray'],
+  disponivel: ['Disponível', 'green'],
+  entregue: ['Entregue', 'blue'],
+};
+const TAG_OPTIONS = ['Gestante', 'Criança', 'Idoso', 'Autista (TEA)', 'PCD', 'Diabético', 'Hipertenso', 'Cardiopata', 'Oncológico', 'Atendimento prioritário'];
+const EXAM_SUGGESTIONS = [
+  'Ultrassom de abdome total', 'Ultrassom de abdome superior', 'Ultrassom de mamas e axilas',
+  'Ultrassom de partes moles', 'Ultrassom de articulações', 'Ultrassom transvaginal',
+  'Ultrassom pélvico transabdominal', 'Ultrassom obstétrico com Doppler',
+  'Ultrassom morfológico 1º trimestre', 'Ultrassom morfológico 2º trimestre',
+  'Ultrassom de rins e vias urinárias', 'Ultrassom de próstata', 'Ultrassom de tireoide',
+  'Eletrocardiograma', 'Ecocardiograma', 'Holter 24h', 'MAPA 24h',
+  'Doppler de carótidas e vertebrais', 'Duplex scan venoso de membros inferiores',
+  'Espirometria', 'Polissonografia', 'Videonasofibroscopia', 'Videolaringoscopia',
+  'Teste alérgico', 'Colposcopia', 'Citologia (preventivo)',
+];
+
 /* ---------- detalhe do paciente ---------- */
+let currentExams = [];
+let editingExam = null;
+
 async function openPatient(id) {
   current = patients.find((p) => p.id === id);
   if (!current) return;
@@ -150,18 +182,35 @@ async function openPatient(id) {
   const box = $('#detailBox');
   box.innerHTML = '<div class="card"><p class="empty">Carregando…</p></div>';
 
-  const [{ data: exams }, { data: pregs }] = await Promise.all([
+  const [{ data: exams }, { data: files }, { data: rec }] = await Promise.all([
     db.from('vittalit_exams').select('*').eq('patient_id', id).order('exam_date', { ascending: false }),
-    db.from('vittalit_pregnancies').select('*').eq('patient_id', id).order('created_at', { ascending: false }).limit(1),
+    db.from('vittalit_exam_files').select('*').eq('patient_id', id).order('created_at'),
+    db.from('vittalit_records').select('*').eq('patient_id', id).maybeSingle(),
   ]);
-  const preg = pregs?.[0];
+  const filesByExam = {};
+  (files || []).forEach((f) => { (filesByExam[f.exam_id] ||= []).push(f); });
+  currentExams = (exams || []).map((e) => ({ ...e, files: filesByExam[e.id] || [] }));
+
+  const age = current.birth_date
+    ? Math.floor((Date.now() - new Date(current.birth_date + 'T12:00:00').getTime()) / 31557600000) + ' anos'
+    : '';
 
   box.innerHTML = `
     <div class="card">
       <h3>${esc(current.full_name)}</h3>
       <p style="color:var(--muted);font-size:.88rem">
-        CPF ${fmtCpf(current.cpf)} · ${current.phone ? esc(current.phone) + ' · ' : ''}${current.birth_date ? 'nasc. ' + fmtDate(current.birth_date) : ''}
+        CPF ${fmtCpf(current.cpf)}${current.phone ? ' · ' + esc(current.phone) : ''}${current.birth_date ? ' · ' + fmtDate(current.birth_date) + (age ? ` (${age})` : '') : ''}
       </p>
+      <div class="field" style="margin-top:14px">
+        <label>Perfil do paciente <span style="font-weight:500;color:var(--muted)">— ajuda a equipe a preparar o atendimento</span></label>
+        <div id="tagPicker" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px">
+          ${TAG_OPTIONS.map((t) => `
+            <button type="button" class="tagbtn${(current.tags || []).includes(t) ? ' on' : ''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('')}
+          ${(current.tags || []).filter((t) => !TAG_OPTIONS.includes(t)).map((t) => `
+            <button type="button" class="tagbtn on" data-tag="${esc(t)}">${esc(t)}</button>`).join('')}
+          <button type="button" class="tagbtn add" id="addTagBtn">+ outro</button>
+        </div>
+      </div>
       <div class="toolrow" style="margin:14px 0 0">
         <button class="btn btn-soft btn-sm" id="pwBtn">Redefinir senha</button>
         <button class="btn btn-soft btn-sm" id="mailBtn">Enviar acesso por e-mail</button>
@@ -171,35 +220,35 @@ async function openPatient(id) {
     </div>
 
     <div class="card">
-      <div class="toolrow" style="margin-bottom:8px">
-        <h3 style="margin:0;flex:1">Resultados de exames (${exams?.length || 0})</h3>
-        <button class="btn btn-primary btn-sm" id="newExamBtn" style="width:auto">+ Adicionar exame</button>
+      <div class="toolrow" style="margin-bottom:10px">
+        <h3 style="margin:0;flex:1">Exames (${currentExams.length})</h3>
+        <button class="btn btn-primary btn-sm" id="newExamBtn" style="width:auto">+ Novo exame</button>
       </div>
-      <div id="examRows">${(exams || []).map((e) => `
-        <div class="item">
-          <div class="tx"><b>${esc(e.title)}</b><small>${fmtDate(e.exam_date)}${e.gestation_week ? ` · ${e.gestation_week} sem` : ''} · ${e.category}${e.file_path ? '' : ' · sem arquivo'}</small></div>
-          <div class="actions">
-            ${e.file_path ? `<button class="btn btn-soft btn-sm" data-view="${esc(e.file_path)}">Ver</button>` : ''}
-            <button class="btn btn-danger btn-sm" data-delexam="${e.id}" data-path="${esc(e.file_path || '')}">Excluir</button>
-          </div>
-        </div>`).join('') || '<p class="empty">Nenhum exame lançado.</p>'}
-      </div>
+      <div id="examRows">${renderExamRows()}</div>
     </div>
 
     <div class="card">
-      <h3>Gestação</h3>
+      <h3>Ficha clínica <span class="badge gray" style="margin-left:6px">uso interno</span></h3>
+      <p style="color:var(--muted);font-size:.84rem;margin-bottom:14px">Informações de apoio ao atendimento. O paciente não vê estes campos.</p>
       <div class="grid3">
-        <div class="field"><label>DUM (última menstruação)</label><input id="pregLmp" type="date" value="${preg?.lmp_date || ''}"></div>
-        <div class="field"><label>DPP (parto previsto)</label><input id="pregDue" type="date" value="${preg?.due_date || ''}"></div>
-        <div class="field"><label>Acompanhamento ativo?</label>
-          <select id="pregActive"><option value="yes" ${preg?.active ? 'selected' : ''}>Sim</option><option value="no" ${!preg || !preg.active ? 'selected' : ''}>Não</option></select>
-        </div>
+        <div class="field"><label>Tipo sanguíneo</label><input id="rc_blood" value="${esc(rec?.blood_type || '')}" placeholder="Ex.: O+"></div>
+        <div class="field"><label>Convênio / plano</label><input id="rc_plan" value="${esc(rec?.health_plan || '')}" placeholder="Particular, Unimed…"></div>
+        <div class="field"><label>Contato de emergência</label><input id="rc_emerg" value="${esc(rec?.emergency_contact || '')}" placeholder="Nome e telefone"></div>
       </div>
-      <div class="field"><label>Orientações (visível à paciente)</label><input id="pregNotes" value="${esc(preg?.notes || '')}"></div>
-      <button class="btn btn-primary btn-sm" id="savePregBtn" style="width:auto">Salvar gestação</button>
-    </div>`;
+      <div class="grid2">
+        <div class="field"><label>Alergias</label><input id="rc_allergies" value="${esc(rec?.allergies || '')}" placeholder="Medicamentos, alimentos…"></div>
+        <div class="field"><label>Medicações em uso</label><input id="rc_meds" value="${esc(rec?.medications || '')}"></div>
+      </div>
+      <div class="field"><label>Condições / comorbidades</label><input id="rc_cond" value="${esc(rec?.conditions || '')}" placeholder="Hipertensão, diabetes…"></div>
+      <div class="field"><label>Observações gerais</label><input id="rc_notes" value="${esc(rec?.notes || '')}"></div>
+      <button class="btn btn-primary btn-sm" id="saveRecBtn" style="width:auto">Salvar ficha clínica</button>
+      ${rec?.updated_at ? `<p class="hint" style="margin-top:8px">Última atualização: ${new Date(rec.updated_at).toLocaleString('pt-BR')}</p>` : ''}
+    </div>
+
+    `;
 
   const dmsg = $('#detailMsg');
+  bindExamRows();
 
   $('#pwBtn').addEventListener('click', async () => {
     const pass = prompt('Nova senha para ' + current.full_name + ' (mín. 6 caracteres):', 'Vit' + Math.random().toString(36).slice(2, 8));
@@ -216,26 +265,6 @@ async function openPatient(id) {
     showPanel('patients');
   });
 
-  $('#newExamBtn').addEventListener('click', () => {
-    ['ex_title', 'ex_notes', 'ex_week'].forEach((id) => $('#' + id).value = '');
-    $('#ex_date').value = new Date().toISOString().slice(0, 10);
-    $('#ex_cat').value = 'outros';
-    $('#ex_file').value = '';
-    $('#examModal').classList.add('show');
-  });
-
-  box.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', async () => {
-    const { data } = await db.storage.from('vittalit').createSignedUrl(b.dataset.view, 3600);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-  }));
-
-  box.querySelectorAll('[data-delexam]').forEach((b) => b.addEventListener('click', async () => {
-    if (!confirm('Excluir este exame?')) return;
-    if (b.dataset.path) await db.storage.from('vittalit').remove([b.dataset.path]);
-    await db.from('vittalit_exams').delete().eq('id', b.dataset.delexam);
-    openPatient(current.id);
-  }));
-
   $('#mailBtn').addEventListener('click', async () => {
     const email = prompt(
       'E-mail do paciente para receber o acesso:\n(se o paciente já tem e-mail cadastrado, deixe em branco para usar o mesmo)',
@@ -247,61 +276,227 @@ async function openPatient(id) {
     flash(dmsg, out.error || `Acesso enviado para ${out.email}! Nova senha: ${pass}`, !out.error);
   });
 
-  $('#savePregBtn').addEventListener('click', async () => {
-    const btn = $('#savePregBtn');
+  $('#newExamBtn').addEventListener('click', () => openExamModal(null));
+
+  $('#saveRecBtn').addEventListener('click', async () => {
+    const btn = $('#saveRecBtn');
     btn.disabled = true;
-    const payload = {
+    const { error } = await db.from('vittalit_records').upsert({
       patient_id: current.id,
-      lmp_date: $('#pregLmp').value || null,
-      due_date: $('#pregDue').value || null,
-      active: $('#pregActive').value === 'yes',
-      notes: $('#pregNotes').value.trim() || null,
-    };
-    const q = preg
-      ? db.from('vittalit_pregnancies').update(payload).eq('id', preg.id)
-      : db.from('vittalit_pregnancies').insert(payload);
-    const { error } = await q;
+      blood_type: $('#rc_blood').value.trim() || null,
+      health_plan: $('#rc_plan').value.trim() || null,
+      emergency_contact: $('#rc_emerg').value.trim() || null,
+      allergies: $('#rc_allergies').value.trim() || null,
+      medications: $('#rc_meds').value.trim() || null,
+      conditions: $('#rc_cond').value.trim() || null,
+      notes: $('#rc_notes').value.trim() || null,
+      updated_by: me.id,
+      updated_at: new Date().toISOString(),
+    });
     btn.disabled = false;
-    flash(dmsg, error ? error.message : 'Dados da gestação salvos!', !error);
+    flash(dmsg, error ? error.message : 'Ficha clínica salva!', !error);
+  });
+
+  /* etiquetas de perfil — salvam ao clicar */
+  const saveTags = async (tags) => {
+    const { error } = await db.from('vittalit_users').update({ tags }).eq('id', current.id);
+    if (error) { flash(dmsg, error.message); return false; }
+    current.tags = tags;
+    const idx = patients.findIndex((p) => p.id === current.id);
+    if (idx >= 0) patients[idx].tags = tags;
+    renderPatients();
+    return true;
+  };
+  $('#tagPicker').addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('.tagbtn');
+    if (!btn || btn.id === 'addTagBtn') return;
+    const tag = btn.dataset.tag;
+    const tags = new Set(current.tags || []);
+    tags.has(tag) ? tags.delete(tag) : tags.add(tag);
+    if (await saveTags([...tags])) btn.classList.toggle('on');
+  });
+  $('#addTagBtn').addEventListener('click', async () => {
+    const tag = prompt('Nova etiqueta de perfil (ex.: Cadeirante, Acompanhado):');
+    if (!tag || !tag.trim()) return;
+    const tags = [...new Set([...(current.tags || []), tag.trim()])];
+    if (await saveTags(tags)) openPatient(current.id);
   });
 }
 
-/* salvar exame (modal) */
+function renderExamRows() {
+  if (!currentExams.length) {
+    return '<p class="empty">Nenhum exame lançado.<br><small>Clique em "+ Novo exame" para registrar o primeiro resultado.</small></p>';
+  }
+  return currentExams.map((e) => {
+    const [stLabel, stColor] = STATUS[e.status] || STATUS.disponivel;
+    const meta = [
+      `Realizado em ${fmtDate(e.exam_date)}`,
+      e.delivered_at ? `entregue em ${fmtDate(e.delivered_at)}` : null,
+      e.requesting_doctor ? `solicitante: ${esc(e.requesting_doctor)}` : null,
+    ].filter(Boolean).join(' · ');
+    const fileList = e.files.length
+      ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${e.files.map((f) => `
+          <button class="btn btn-soft btn-sm" data-view="${esc(f.file_path)}" title="Abrir ${esc(f.file_name)}">
+            📄 ${esc(f.file_name.length > 26 ? f.file_name.slice(0, 24) + '…' : f.file_name)}
+          </button>`).join('')}</div>`
+      : '<p class="hint" style="margin-top:6px">Nenhum arquivo anexado ainda.</p>';
+    return `
+      <div class="item" style="align-items:flex-start;flex-wrap:wrap">
+        <span class="ic">${e.files.length ? '📁' : '🗂️'}</span>
+        <div class="tx" style="white-space:normal">
+          <b style="white-space:normal">${esc(e.title)}</b>
+          <small>${esc(CATS[e.category] || e.category)} · ${meta}</small>
+          ${e.notes ? `<small style="display:block;margin-top:3px">Obs.: ${esc(e.notes)}</small>` : ''}
+          ${fileList}
+        </div>
+        <div class="actions" style="flex-direction:column;align-items:flex-end;gap:6px">
+          <span class="badge ${stColor}">${stLabel}</span>
+          ${e.released ? '' : '<span class="badge gray">oculto</span>'}
+          <button class="btn btn-soft btn-sm" data-editexam="${e.id}">Editar</button>
+          <button class="btn btn-danger btn-sm" data-delexam="${e.id}">Excluir</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function bindExamRows() {
+  const box = $('#examRows');
+  if (!box) return;
+  box.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', async () => {
+    const { data } = await db.storage.from('vittalit').createSignedUrl(b.dataset.view, 3600);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  }));
+  box.querySelectorAll('[data-editexam]').forEach((b) => b.addEventListener('click', () => {
+    openExamModal(currentExams.find((e) => e.id === b.dataset.editexam));
+  }));
+  box.querySelectorAll('[data-delexam]').forEach((b) => b.addEventListener('click', async () => {
+    const exam = currentExams.find((e) => e.id === b.dataset.delexam);
+    if (!confirm(`Excluir o exame "${exam.title}" e seus ${exam.files.length} arquivo(s)?`)) return;
+    if (exam.files.length) {
+      await db.storage.from('vittalit').remove(exam.files.map((f) => f.file_path));
+    }
+    await db.from('vittalit_exams').delete().eq('id', exam.id);
+    openPatient(current.id);
+  }));
+}
+
+/* ---------- modal de exame ---------- */
+$('#examSuggestions').innerHTML = EXAM_SUGGESTIONS.map((s) => `<option value="${esc(s)}">`).join('');
+
+function openExamModal(exam) {
+  editingExam = exam || null;
+  $('#examModalTitle').textContent = exam ? 'Editar exame' : 'Novo exame';
+  $('#saveExamBtn').textContent = exam ? 'Salvar alterações' : 'Salvar exame';
+  $('#examMsg').classList.remove('show');
+  $('#ex_file').value = '';
+
+  $('#ex_cat').value = exam?.category || 'ultrassom';
+  $('#ex_title').value = exam?.title || '';
+  $('#ex_date').value = exam?.exam_date || new Date().toISOString().slice(0, 10);
+  $('#ex_delivered').value = exam?.delivered_at || '';
+  $('#ex_req_doctor').value = exam?.requesting_doctor || '';
+  $('#ex_performed_by').value = exam?.performed_by || '';
+  $('#ex_status').value = exam?.status || 'disponivel';
+  $('#ex_released').value = exam && !exam.released ? 'no' : 'yes';
+  $('#ex_notes').value = exam?.notes || '';
+  $('#ex_internal').value = exam?.internal_notes || '';
+
+  renderExamModalFiles();
+  $('#examModal').classList.add('show');
+}
+
+function renderExamModalFiles() {
+  const box = $('#ex_existing_files');
+  if (!editingExam || !editingExam.files.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `
+    <div class="field">
+      <label>Arquivos já anexados (${editingExam.files.length})</label>
+      ${editingExam.files.map((f) => `
+        <div class="item" style="margin-bottom:6px;padding:9px 12px">
+          <div class="tx"><b style="font-size:.86rem">${esc(f.file_name)}</b><small>${new Date(f.created_at).toLocaleDateString('pt-BR')}</small></div>
+          <div class="actions">
+            <button class="btn btn-soft btn-sm" data-mview="${esc(f.file_path)}">Ver</button>
+            <button class="btn btn-danger btn-sm" data-mdel="${f.id}" data-path="${esc(f.file_path)}">Remover</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  box.querySelectorAll('[data-mview]').forEach((b) => b.addEventListener('click', async () => {
+    const { data } = await db.storage.from('vittalit').createSignedUrl(b.dataset.mview, 3600);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  }));
+  box.querySelectorAll('[data-mdel]').forEach((b) => b.addEventListener('click', async () => {
+    if (!confirm('Remover este arquivo do exame?')) return;
+    await db.storage.from('vittalit').remove([b.dataset.path]);
+    await db.from('vittalit_exam_files').delete().eq('id', b.dataset.mdel);
+    editingExam.files = editingExam.files.filter((f) => f.id !== b.dataset.mdel);
+    renderExamModalFiles();
+    flash($('#examMsg'), 'Arquivo removido.', true);
+  }));
+}
+
+async function uploadExamFiles(examId, fileList) {
+  const rows = [];
+  for (const file of fileList) {
+    const clean = file.name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9.\-_ ]/g, '_');
+    const path = `exams/${current.id}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${clean}`;
+    const { error } = await db.storage.from('vittalit').upload(path, file, { contentType: file.type });
+    if (error) throw new Error(`Erro ao enviar "${file.name}": ${error.message}`);
+    rows.push({
+      exam_id: examId, patient_id: current.id, file_path: path, file_name: file.name,
+      mime_type: file.type || null, size_bytes: file.size || null, uploaded_by: me.id,
+    });
+  }
+  if (rows.length) {
+    const { error } = await db.from('vittalit_exam_files').insert(rows);
+    if (error) throw new Error(error.message);
+  }
+  return rows.length;
+}
+
 $('#saveExamBtn').addEventListener('click', async () => {
   if (!current) return;
   const btn = $('#saveExamBtn'); const msg = $('#examMsg');
   const title = $('#ex_title').value.trim();
-  if (!title) { flash(msg, 'Informe o título do exame.'); return; }
+  if (!title) { flash(msg, 'Informe o nome do exame.'); return; }
+  if (!$('#ex_date').value) { flash(msg, 'Informe a data de realização.'); return; }
+
+  const label = btn.textContent;
   btn.disabled = true; btn.textContent = 'Salvando…';
-
-  let filePath = null;
-  const file = $('#ex_file').files[0];
-  if (file) {
-    const clean = file.name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    filePath = `exams/${current.id}/${Date.now()}-${clean}`;
-    const { error: upErr } = await db.storage.from('vittalit').upload(filePath, file, { contentType: file.type });
-    if (upErr) {
-      btn.disabled = false; btn.textContent = 'Salvar exame';
-      flash(msg, 'Erro ao enviar arquivo: ' + upErr.message);
-      return;
-    }
-  }
-
-  const week = parseInt($('#ex_week').value, 10);
-  const { error } = await db.from('vittalit_exams').insert({
+  const payload = {
     patient_id: current.id,
     title,
     category: $('#ex_cat').value,
-    exam_date: $('#ex_date').value || new Date().toISOString().slice(0, 10),
-    gestation_week: Number.isFinite(week) ? week : null,
+    exam_date: $('#ex_date').value,
+    delivered_at: $('#ex_delivered').value || null,
+    requesting_doctor: $('#ex_req_doctor').value.trim() || null,
+    performed_by: $('#ex_performed_by').value.trim() || null,
+    status: $('#ex_status').value,
+    released: $('#ex_released').value === 'yes',
     notes: $('#ex_notes').value.trim() || null,
-    file_path: filePath,
-    created_by: me.id,
-  });
-  btn.disabled = false; btn.textContent = 'Salvar exame';
-  if (error) { flash(msg, error.message); return; }
-  flash(msg, 'Exame salvo! O paciente já pode ver no portal.', true);
-  setTimeout(() => { $('#examModal').classList.remove('show'); openPatient(current.id); }, 1200);
+    internal_notes: $('#ex_internal').value.trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  try {
+    let examId = editingExam?.id;
+    if (examId) {
+      const { error } = await db.from('vittalit_exams').update(payload).eq('id', examId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { data, error } = await db.from('vittalit_exams')
+        .insert({ ...payload, created_by: me.id }).select('id').single();
+      if (error) throw new Error(error.message);
+      examId = data.id;
+    }
+    const uploaded = await uploadExamFiles(examId, $('#ex_file').files);
+    flash(msg, editingExam
+      ? `Exame atualizado!${uploaded ? ` ${uploaded} arquivo(s) adicionado(s).` : ''}`
+      : `Exame salvo com ${uploaded} arquivo(s).${payload.released ? ' O paciente já pode ver no portal.' : ''}`, true);
+    setTimeout(() => { $('#examModal').classList.remove('show'); openPatient(current.id); }, 1100);
+  } catch (e) {
+    flash(msg, e.message);
+  }
+  btn.disabled = false; btn.textContent = label;
 });
 
 /* ---------- equipe (corpo técnico) ---------- */
