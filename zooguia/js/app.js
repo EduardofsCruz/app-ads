@@ -437,7 +437,7 @@ function carregarGuia(a) {
   guia.inicio = performance.now();
   guia.chegouTocado = false;
 
-  // vídeo do animal "vivo" (id-video.webm/mp4), com fundo removido ao vivo
+  // vídeo do animal "vivo" (id-guia.mp4, ou id-video.webm/mp4), com fundo removido ao vivo
   const vd = document.createElement("video");
   vd.muted = true;
   vd.loop = true;
@@ -449,9 +449,15 @@ function carregarGuia(a) {
     vd.play().catch(() => {});
   };
   vd.onerror = () => {
-    if (vd.dataset.mp4) return;      // já tentou os dois formatos
-    vd.dataset.mp4 = "1";
-    vd.src = `img/animais/${a.id}-video.mp4`;
+    // Tenta em ordem: guia.mp4 → video.mp4 → video.webm
+    const tentativa = (vd.dataset.tentativa || 0) * 1;
+    if (tentativa === 0) {
+      vd.dataset.tentativa = "1";
+      vd.src = `img/animais/${a.id}-guia.mp4`; // novo vídeo prioritário
+    } else if (tentativa === 1) {
+      vd.dataset.tentativa = "2";
+      vd.src = `img/animais/${a.id}-video.mp4`;
+    }
   };
   guia.videoEl = vd;
   vd.src = `img/animais/${a.id}-video.webm`;
@@ -934,7 +940,6 @@ function desenharPegada(ctx, tipo, s) {
 }
 
 function desenharGuia(ctx, w, h, rumoAlvo, dist) {
-  // ângulo relativo entre onde o celular aponta e onde o animal está
   const heading = estado.heading;
   const cx = w / 2, cy = h / 2;
 
@@ -952,142 +957,88 @@ function desenharGuia(ctx, w, h, rumoAlvo, dist) {
   const alinhado = Math.abs(rel) < 20;
   const t = performance.now() / 1000;
   const alvo = estado.alvo;
-  const tipo = alvo.trilha || "pata";
-  const voador = tipo === "voa" || tipo === "borboleta";
-
-  // a "ponte": caminho que sai dos seus pés e se curva na direção do
-  // recinto; reto quando você está alinhado
-  const desvio = Math.max(-1, Math.min(1, rel / 90));
-  const iniX = cx, iniY = h * 0.92;
-  const fimX = cx + desvio * w * 0.42;
-  const fimY = h * 0.30;
-  const ctrlX = cx + desvio * w * 0.12;
-  const ctrlY = h * 0.62;
-  const P = (u) => [pontoCurva(iniX, ctrlX, fimX, u), pontoCurva(iniY, ctrlY, fimY, u)];
-  const A = (u) => anguloCurva(iniX, ctrlX, fimX, iniY, ctrlY, fimY, u);
 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  // ——— feedback visual elegante: indicador de alinhamento ———
-  // mostra setas quando desalinhado, linha de chegada quando alinhado
-  const absRel = Math.abs(rel);
-  const corDoDesvio = (() => {
-    if (absRel < 20) return [100, 200, 80]; // verde
-    if (absRel < 50) return [255, 200, 0]; // amarelo
-    if (absRel < 90) return [255, 130, 0]; // laranja
-    return [255, 60, 60]; // vermelho
-  })();
-
-  if (alinhado) {
-    // Quando alinhado: linha verde sutil e contínua
-    ctx.strokeStyle = `rgba(${corDoDesvio[0]}, ${corDoDesvio[1]}, ${corDoDesvio[2]}, 0.5)`;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(iniX, iniY);
-    ctx.quadraticCurveTo(ctrlX, ctrlY, fimX, fimY);
-    ctx.stroke();
-  } else {
-    // Quando desalinhado: setas animadas apontando a direção
-    const numSetas = 3;
-    const intervalo = 0.3;
-    for (let s = 0; s < numSetas; s++) {
-      const u = (t * 0.6 + s * intervalo) % 1;
-      const [x, y] = P(u);
-      const ang = A(u);
-      const tamanhoSeta = 12 + Math.sin(u * Math.PI) * 4;
-      // desenha uma seta apontando no sentido do caminho
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(ang);
-      ctx.fillStyle = `rgba(${corDoDesvio[0]}, ${corDoDesvio[1]}, ${corDoDesvio[2]}, ${0.7 - u * 0.3})`;
-      ctx.beginPath();
-      ctx.moveTo(0, -tamanhoSeta);
-      ctx.lineTo(-tamanhoSeta * 0.4, tamanhoSeta * 0.6);
-      ctx.lineTo(0, tamanhoSeta * 0.2);
-      ctx.lineTo(tamanhoSeta * 0.4, tamanhoSeta * 0.6);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
-
-  // ——— trilha no chão para rastejantes ———
-  if (tipo === "rasteja") {
-    // rastro ondulado de serpente
-    ctx.strokeStyle = "rgba(101, 67, 33, 0.8)";
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    for (let i = 0; i <= 60; i++) {
-      const u = i / 60;
-      const [x, y] = P(u);
-      const ang = A(u);
-      const larg = 16 * (1 - u * 0.7);
-      const onda = Math.sin(u * 26 - t * 6) * larg;
-      const px = x + Math.cos(ang + Math.PI / 2) * onda;
-      const py = y + Math.sin(ang + Math.PI / 2) * onda;
-      ctx.lineWidth = 5 * (1 - u * 0.6);
-      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-    }
-    ctx.stroke();
-  } else if (voador) {
-    // rota de voo pontilhada, bem sutil
-    ctx.strokeStyle = "rgba(255,255,255,0.5)";
-    ctx.setLineDash([6, 10]);
-    ctx.lineDashOffset = -t * 40;
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(iniX, iniY);
-    ctx.quadraticCurveTo(ctrlX, ctrlY, fimX, fimY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // ——— o animal-guia: emerge da tela e caminha/voa à sua frente ———
+  // ——— o elefante "pegando na mão" ———
   const emergindo = Math.min(1, (performance.now() - guia.inicio) / 900);
   const escEmerge = emergindo < 1
-    ? 1.7 - 0.7 * emergindo + Math.sin(emergindo * Math.PI) * 0.25 // entra grandão e assenta
+    ? 1.7 - 0.7 * emergindo + Math.sin(emergindo * Math.PI) * 0.25
     : 1;
 
-  // caminha da jaula (distante) em direção aos seus pés, guiando o visitante
-  // se alinhado: anda para frente (recuando); se desalinhado: anda para o lado indicando a direção
-  const ciclo = (t * 0.22) % 1;
-  const desvioDir = rel > 0 ? 0.15 : (rel < 0 ? -0.15 : 0); // sai para direita/esquerda conforme ângulo
-  const uG = 0.92 - ciclo * 0.62 + desvioDir * ciclo;
-  let [gx, gy] = P(uG);
-  const persp = 1 - uG * 0.75;               // perspectiva mais dramatica (encolhe mais ao se afastar)
-  let tam = 300 * persp * escEmerge;         // dobro do tamanho anterior
+  // Posição base: à frente do visitante
+  const gx = cx;
+  let gy = h * 0.35; // mais acima
+  const tam = 320 * escEmerge;
 
-  if (voador) {
-    const bat = Math.sin(t * (tipo === "borboleta" ? 14 : 8));
-    gy -= 60 * persp + Math.abs(bat) * 18 * persp;      // voa acima do caminho
-    if (tipo === "borboleta") gx += Math.sin(t * 5) * 30 * persp; // esvoaça
-    // asinhas: a imagem/emoji "bate" esticando na vertical
+  // ——— Lógica de orientação: "pegando na mão" ———
+  // Se não está alinhado: elefante vira para frente mostrando a direção (rosto para visitante)
+  // Se alinhado: elefante de costas, liderando para a frente
+
+  let rotacao = 0; // rotação do animal em radianos
+  let mensagem = "";
+  let corFeedback = [255, 60, 60]; // vermelho por padrão
+
+  if (alinhado) {
+    // Alinhado: elefante tem costas para visitante, liderando
+    rotacao = Math.PI; // virado para frente (costas para câmera)
+    mensagem = `✅ Siga o ${alvo.emoji} em frente!`;
+    corFeedback = [100, 200, 80]; // verde
+
+    // Movimento suave para frente: ondula levemente de um lado para outro
+    const ondulacao = Math.sin(t * 1.2) * 12;
+    const subida = Math.sin(t * 1.5) * 6;
+
     ctx.save();
-    ctx.translate(gx, gy);
-    ctx.scale(1, 0.82 + Math.abs(bat) * 0.25);
-    desenharAnimalGuia(ctx, tam, true, t);
+    ctx.translate(gx + ondulacao, gy - 40 + subida);
+    ctx.scale(-1, 1); // espelho para estar de costas
+    ctx.rotate(rotacao);
+    desenharAnimalGuia(ctx, tam, false, t);
     ctx.restore();
   } else {
-    // movimento suave de caminhada: corpo sobe/desce levemente
-    const passo = Math.sin(t * 2.8) * 8 * persp;  // mais suave e fluido
+    // Desalinhado: elefante vira para mostrar a direção (rosto para visitante)
+    // Muda orientação conforme para qual lado precisa virar
+    rotacao = rel > 0 ? -Math.PI * 0.4 : Math.PI * 0.4; // inclinação para direita/esquerda
+
+    const absRel = Math.abs(rel);
+    if (absRel < 50) {
+      mensagem = "Vire um pouco";
+      corFeedback = [255, 200, 0]; // amarelo
+    } else if (absRel < 90) {
+      mensagem = rel > 0 ? "↻ Gire para a direita →" : "↺ Gire para a esquerda ←";
+      corFeedback = [255, 130, 0]; // laranja
+    } else {
+      mensagem = rel > 0 ? "⟲ Gire bastante para a direita" : "⟳ Gire bastante para a esquerda";
+      corFeedback = [255, 60, 60]; // vermelho
+    }
+
+    // Movimento pendular suave: balanço natural enquanto guia
+    const balanço = Math.sin(t * 1.2) * 8;
+    const bob = Math.abs(Math.sin(t * 1.5)) * 4;
+
     ctx.save();
-    ctx.translate(gx, gy + passo);
-    // gingado suave que muda com a direção (sway left/right when turning)
-    const gingado = Math.sin(t * 2.8) * 0.03 + rel * 0.0008;
-    ctx.rotate(gingado);
+    ctx.translate(gx + balanço, gy - 10 + bob);
+    ctx.rotate(rotacao);
     desenharAnimalGuia(ctx, tam, false, t);
     ctx.restore();
   }
 
+  // ——— Feedback visual: instrução colorida ———
   ctx.fillStyle = "#fff";
-  ctx.font = "bold 17px system-ui";
+  ctx.font = "bold 16px system-ui";
   ctx.shadowColor = "rgba(0,0,0,0.8)";
   ctx.shadowBlur = 6;
-  ctx.fillText(
-    alinhado ? `✅ Siga o ${alvo.emoji} em frente!`
-             : (rel > 0 ? "↻ Gire para a direita" : "↺ Gire para a esquerda"),
-    cx, h * 0.2
-  );
+  ctx.fillText(mensagem, cx, h * 0.15);
+
+  // Barra de status colorida
+  const barraAltura = 8;
+  ctx.fillStyle = `rgba(${corFeedback[0]}, ${corFeedback[1]}, ${corFeedback[2]}, 0.3)`;
+  ctx.fillRect(0, 0, w, barraAltura);
+  ctx.fillStyle = `rgba(${corFeedback[0]}, ${corFeedback[1]}, ${corFeedback[2]}, 0.8)`;
+  const largura = alinhado ? w : w * (Math.abs(rel) / 180);
+  ctx.fillRect(0, 0, largura, barraAltura);
+
   ctx.shadowBlur = 0;
   ctx.textBaseline = "alphabetic";
 }
