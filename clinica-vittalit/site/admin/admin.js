@@ -90,14 +90,24 @@ async function callAdminFn(payload) {
 /* ---------- pacientes ---------- */
 let listMode = 'portal';
 
+let medicitStats = { comCpf: 0, total: 0, semCpf: 0 };
+
 async function loadPatients() {
-  const [{ data }, { count }] = await Promise.all([
+  const [{ data }, { count }, { data: logs }] = await Promise.all([
     db.from('vittalit_users').select('*').eq('role', 'patient').order('full_name'),
     db.from('vittalit_medicit_patients').select('cpf', { count: 'exact', head: true }),
+    db.from('vittalit_sync_log').select('total_received,new_patients,updated_patients')
+      .eq('status', 'ok').order('started_at', { ascending: false }).limit(1),
   ]);
   patients = data || [];
+  const log = logs?.[0];
+  // o total com CPF vem da última carga (novos + atualizados); count é reserva
+  medicitStats.comCpf = log ? (log.new_patients || 0) + (log.updated_patients || 0) : (count ?? 0);
+  if (!medicitStats.comCpf) medicitStats.comCpf = count ?? 0;
+  medicitStats.total = log?.total_received || medicitStats.comCpf;
+  medicitStats.semCpf = Math.max(medicitStats.total - medicitStats.comCpf, 0);
   $('#cntPortal').textContent = patients.length;
-  $('#cntMedicit').textContent = count ?? 0;
+  $('#cntMedicit').textContent = medicitStats.comCpf;
   render();
 }
 
@@ -114,7 +124,9 @@ let medicitTimer = null;
 async function renderMedicit() {
   const box = $('#patientList');
   const q = $('#patientSearch').value.trim();
-  $('#listHint').textContent = 'Pacientes do sistema da clínica (Medicit). Eles só aparecem na aba anterior depois que tiverem acesso ao portal.';
+  $('#listHint').innerHTML = medicitStats.semCpf
+    ? `Seu sistema tem <b>${medicitStats.total.toLocaleString('pt-BR')} cadastros</b>. Aqui aparecem os <b>${medicitStats.comCpf.toLocaleString('pt-BR')} que têm CPF</b> — os outros ${medicitStats.semCpf.toLocaleString('pt-BR')} só poderão usar o portal quando o CPF for incluído no Medicit (o login é pelo CPF).`
+    : 'Pacientes do sistema da clínica (Medicit). Eles só aparecem na aba anterior depois que tiverem acesso ao portal.';
   if (q.length < 3) {
     box.innerHTML = '<p class="empty">Digite ao menos 3 letras do nome ou o CPF para buscar.<br><small>São milhares de cadastros — a busca evita carregar todos de uma vez.</small></p>';
     return;
@@ -797,12 +809,31 @@ async function loadSync() {
     return;
   }
   const label = { ok: ['Concluída', 'green'], erro: ['Com erro', 'gray'], running: ['Em andamento', 'blue'] }[last.status] || ['—', 'gray'];
+  const comCpf = ((last.new_patients || 0) + (last.updated_patients || 0)) || (count ?? 0);
+  const total = last.total_received || comCpf;
+  const semCpf = Math.max(total - comCpf, 0);
+  const n = (v) => Number(v).toLocaleString('pt-BR');
   box.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px">
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px">
+        <b style="font-size:1.4rem;color:var(--navy)">${n(total)}</b>
+        <span style="display:block;font-size:.8rem;color:var(--muted);font-weight:600">cadastros no seu sistema</span>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px">
+        <b style="font-size:1.4rem;color:var(--blue-deep)">${n(comCpf)}</b>
+        <span style="display:block;font-size:.8rem;color:var(--muted);font-weight:600">com CPF — podem usar o portal</span>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px">
+        <b style="font-size:1.4rem;color:var(--muted)">${n(semCpf)}</b>
+        <span style="display:block;font-size:.8rem;color:var(--muted);font-weight:600">sem CPF cadastrado</span>
+      </div>
+    </div>
+    ${semCpf ? `<p class="hint" style="margin-bottom:12px">Nenhum paciente foi perdido: o login do portal é feito pelo CPF, então quem ainda não tem CPF no Medicit não consegue criar acesso sozinho. Basta incluir o CPF no cadastro que ele passa a poder usar no mesmo dia — ou a recepção cria o acesso manualmente.</p>` : ''}
     <div class="item">
       <span class="ic">🔄</span>
       <div class="tx" style="white-space:normal">
         <b>Última sincronização: ${new Date(last.started_at).toLocaleString('pt-BR')}</b>
-        <small>${count ?? 0} pacientes no espelho local${last.new_patients ? ` · ${last.new_patients} novo(s) na última carga` : ''}</small>
+        <small>${last.new_patients ? `${n(last.new_patients)} paciente(s) novo(s) nesta carga` : 'sem novos pacientes nesta carga'}</small>
         ${last.message ? `<small style="display:block;margin-top:3px">${esc(last.message)}</small>` : ''}
       </div>
       <span class="badge ${label[1]}">${label[0]}</span>
