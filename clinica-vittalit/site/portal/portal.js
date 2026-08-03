@@ -137,6 +137,7 @@ const showSignup = (on) => {
     $('#suStep1').classList.remove('hidden');
     $('#suStep2').classList.add('hidden');
     $('#suEmailField').classList.add('hidden');
+    $('#suPhoneField').classList.add('hidden');
     $('#suCpf').value = $('#login').value;
   }
 };
@@ -152,10 +153,19 @@ $('#suSendBtn').addEventListener('click', async () => {
 
   const btn = $('#suSendBtn');
   btn.disabled = true; btn.textContent = 'Verificando…';
-  const out = await callPublicFn({ action: 'signup_start', cpf, birth_date: birth, email });
+  const out = await callPublicFn({
+    action: 'signup_start', cpf, birth_date: birth, email,
+    phone_last4: $('#suPhone').value.replace(/\D/g, ''),
+  });
   btn.disabled = false; btn.textContent = 'Continuar';
 
   if (out.error) { suMsg(out.error); return; }
+  if (out.need_phone) {
+    $('#suPhoneField').classList.remove('hidden');
+    suMsg('Para sua segurança, confirme os 4 últimos dígitos do celular cadastrado na clínica.');
+    $('#suPhone').focus();
+    return;
+  }
   if (out.need_email) {
     $('#suEmailField').classList.remove('hidden');
     suMsg('Quase lá! Informe um e-mail para receber o código de confirmação.');

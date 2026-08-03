@@ -7,7 +7,7 @@
 <meta name="description" content="Acesse seus resultados de exames, plano alimentar e acompanhamento de gestação — Portal do Paciente da Clínica Vittalit.">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="../img/favicon.png">
-<link rel="stylesheet" href="../css/portal.css?v=10">
+<link rel="stylesheet" href="../css/portal.css?v=11">
 </head>
 <body>
 
@@ -52,10 +52,15 @@
           <label for="suBirth">Data de nascimento</label>
           <input id="suBirth" type="date">
         </div>
+        <div class="field hidden" id="suPhoneField">
+          <label for="suPhone">4 últimos dígitos do seu celular</label>
+          <input id="suPhone" inputmode="numeric" maxlength="4" placeholder="0000" style="letter-spacing:.3em;text-align:center;font-weight:700">
+          <p class="hint">Confirme com o número que está no seu cadastro na clínica.</p>
+        </div>
         <div class="field hidden" id="suEmailField">
           <label for="suEmail">Seu e-mail</label>
           <input id="suEmail" type="email" placeholder="para receber o código e recuperar a senha depois">
-          <p class="hint">Não encontramos e-mail no seu cadastro. Informe um para continuar.</p>
+          <p class="hint">Enviaremos um código de confirmação para este endereço.</p>
         </div>
         <button class="btn btn-primary" id="suSendBtn" type="button">Continuar</button>
       </div>
@@ -145,8 +150,8 @@
   </main>
 </div>
 
-<script src="../js/supabase.js?v=8"></script>
-<script src="../js/config.js?v=8"></script>
-<script src="portal.js?v=8"></script>
+<script src="../js/supabase.js?v=11"></script>
+<script src="../js/config.js?v=11"></script>
+<script src="portal.js?v=11"></script>
 </body>
 </html>
