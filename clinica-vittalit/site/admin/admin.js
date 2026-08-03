@@ -54,6 +54,7 @@ async function boot() {
   loadTeam();
   loadPartners();
   loadOmbudsman();
+  loadSync();
 }
 
 /* ---------- tabs / navegação ---------- */
@@ -117,9 +118,31 @@ function renderPatients() {
 }
 $('#patientSearch').addEventListener('input', renderPatients);
 
+/* busca no Medicit para preencher o cadastro */
+let lookupResult = null;
+$('#lookupBtn').addEventListener('click', async () => {
+  const btn = $('#lookupBtn'); const msg = $('#patientMsg');
+  const cpf = $('#lookupCpf').value.replace(/\D/g, '');
+  if (cpf.length !== 11) { flash(msg, 'Digite o CPF completo (11 números).'); return; }
+  btn.disabled = true; btn.textContent = 'Buscando…';
+  const out = await callAdminFn({ action: 'medicit_lookup', cpf });
+  btn.disabled = false; btn.textContent = '🔍 Buscar';
+  if (out.error) { flash(msg, out.error); return; }
+  if (out.already_registered) { flash(msg, 'Este paciente já tem acesso cadastrado no portal.'); return; }
+  const p = out.patient;
+  lookupResult = p;
+  $('#np_name').value = p.full_name || '';
+  $('#np_cpf').value = cpf;
+  $('#np_phone').value = p.phone || '';
+  $('#np_birth').value = (p.birth_date || '').slice(0, 10);
+  $('#np_email').value = p.email || '';
+  flash(msg, `Dados de ${(p.full_name || '').split(' ')[0]} carregados do Medicit — confira e cadastre.`, true);
+});
+
 /* novo paciente */
 $('#newPatientBtn').addEventListener('click', () => {
-  ['np_name', 'np_cpf', 'np_phone', 'np_email'].forEach((id) => $('#' + id).value = '');
+  lookupResult = null;
+  ['np_name', 'np_cpf', 'np_phone', 'np_email', 'lookupCpf'].forEach((id) => $('#' + id).value = '');
   $('#np_birth').value = '';
   $('#np_pass').value = 'Vit' + Math.random().toString(36).slice(2, 8) + Math.floor(Math.random() * 90 + 10);
   $('#patientModal').classList.add('show');
@@ -136,6 +159,8 @@ $('#createPatientBtn').addEventListener('click', async () => {
     birth_date: $('#np_birth').value,
     email: $('#np_email').value,
     password: $('#np_pass').value,
+    from_medicit: !!lookupResult,
+    medicit_id: lookupResult?.id_pessoa ?? null,
   });
   btn.disabled = false; btn.textContent = 'Cadastrar paciente';
   if (out.error) { flash(msg, out.error); return; }
@@ -671,6 +696,7 @@ async function loadSettings() {
   (data || []).forEach((r) => {
     const el = $('#set_' + r.key);
     if (el) el.value = r.value;
+    if (r.key === 'signup_enabled') $('#signupEnabled').checked = r.value === 'sim';
   });
 }
 
@@ -687,6 +713,48 @@ $('#saveSettingsBtn').addEventListener('click', async () => {
   const { error } = await db.from('vittalit_settings').upsert(rows);
   btn.disabled = false;
   flash(msg, error ? error.message : 'Configurações salvas! O site já usa os novos dados.', !error);
+});
+
+/* ---------- integração Medicit ---------- */
+async function loadSync() {
+  const [{ data: logs }, { count }] = await Promise.all([
+    db.from('vittalit_sync_log').select('*').order('started_at', { ascending: false }).limit(1),
+    db.from('vittalit_medicit_patients').select('cpf', { count: 'exact', head: true }),
+  ]);
+  const last = logs?.[0];
+  const box = $('#syncStatus');
+  if (!last) {
+    box.innerHTML = '<p class="empty" style="padding:18px">Nenhuma sincronização executada ainda.<br><small>Ela roda automaticamente às 22h, ou clique em "Sincronizar agora".</small></p>';
+    return;
+  }
+  const label = { ok: ['Concluída', 'green'], erro: ['Com erro', 'gray'], running: ['Em andamento', 'blue'] }[last.status] || ['—', 'gray'];
+  box.innerHTML = `
+    <div class="item">
+      <span class="ic">🔄</span>
+      <div class="tx" style="white-space:normal">
+        <b>Última sincronização: ${new Date(last.started_at).toLocaleString('pt-BR')}</b>
+        <small>${count ?? 0} pacientes no espelho local${last.new_patients ? ` · ${last.new_patients} novo(s) na última carga` : ''}</small>
+        ${last.message ? `<small style="display:block;margin-top:3px">${esc(last.message)}</small>` : ''}
+      </div>
+      <span class="badge ${label[1]}">${label[0]}</span>
+    </div>`;
+}
+
+$('#syncNowBtn').addEventListener('click', async () => {
+  const btn = $('#syncNowBtn'); const msg = $('#syncMsg');
+  btn.disabled = true; btn.textContent = 'Sincronizando…';
+  const out = await callAdminFn({ action: 'sync_now' });
+  btn.disabled = false; btn.textContent = 'Sincronizar agora';
+  flash(msg, out.error || `Sincronização concluída: ${out.validos ?? 0} pacientes (${out.novos ?? 0} novos).`, !out.error);
+  loadSync();
+});
+
+$('#signupEnabled').addEventListener('change', async (ev) => {
+  const value = ev.target.checked ? 'sim' : 'nao';
+  const { error } = await db.from('vittalit_settings')
+    .upsert({ key: 'signup_enabled', value, updated_at: new Date().toISOString() });
+  flash($('#syncMsg'), error ? error.message
+    : (value === 'sim' ? 'Primeiro acesso online liberado.' : 'Primeiro acesso online desativado.'), !error);
 });
 
 /* ---------- minha conta ---------- */

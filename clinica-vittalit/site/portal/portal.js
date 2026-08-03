@@ -121,6 +121,84 @@ $('#fpSaveBtn').addEventListener('click', async () => {
   m.className = 'msg show ok';
 });
 
+/* ---------- primeiro acesso ---------- */
+const suMsg = (text, ok = false) => {
+  const m = $('#suMsg');
+  m.textContent = text;
+  m.className = 'msg show ' + (ok ? 'ok' : 'err');
+};
+const showSignup = (on) => {
+  $('#signupBox').classList.toggle('hidden', !on);
+  $('#loginForm').classList.toggle('hidden', on);
+  if (on) {
+    $('#forgotBox').classList.add('hidden');
+    $('#authMsg').classList.remove('show');
+    $('#suMsg').className = 'msg';
+    $('#suStep1').classList.remove('hidden');
+    $('#suStep2').classList.add('hidden');
+    $('#suEmailField').classList.add('hidden');
+    $('#suCpf').value = $('#login').value;
+  }
+};
+$('#signupLink').addEventListener('click', (ev) => { ev.preventDefault(); showSignup(true); });
+$('#signupBack').addEventListener('click', (ev) => { ev.preventDefault(); showSignup(false); });
+
+$('#suSendBtn').addEventListener('click', async () => {
+  const cpf = $('#suCpf').value.replace(/\D/g, '');
+  const birth = $('#suBirth').value;
+  const email = $('#suEmail').value.trim();
+  if (cpf.length !== 11) { suMsg('Digite o CPF completo (11 números).'); return; }
+  if (!birth) { suMsg('Informe sua data de nascimento.'); return; }
+
+  const btn = $('#suSendBtn');
+  btn.disabled = true; btn.textContent = 'Verificando…';
+  const out = await callPublicFn({ action: 'signup_start', cpf, birth_date: birth, email });
+  btn.disabled = false; btn.textContent = 'Continuar';
+
+  if (out.error) { suMsg(out.error); return; }
+  if (out.need_email) {
+    $('#suEmailField').classList.remove('hidden');
+    suMsg('Quase lá! Informe um e-mail para receber o código de confirmação.');
+    $('#suEmail').focus();
+    return;
+  }
+  if (out.sent) {
+    $('#suSentTo').innerHTML = out.from_cadastro
+      ? `Enviamos um código de 6 dígitos para o e-mail do seu cadastro: <b>${esc(out.masked_email)}</b>. Ele vale por 15 minutos.`
+      : `Enviamos um código de 6 dígitos para <b>${esc(out.masked_email)}</b>. Ele vale por 15 minutos.`;
+    $('#suStep1').classList.add('hidden');
+    $('#suStep2').classList.remove('hidden');
+    suMsg(`Tudo certo${out.name ? ', ' + out.name : ''}! Confira seu e-mail (veja também o spam).`, true);
+  }
+});
+
+$('#suSaveBtn').addEventListener('click', async () => {
+  const cpf = $('#suCpf').value.replace(/\D/g, '');
+  const code = $('#suCode').value.trim();
+  const p1 = $('#suPass').value, p2 = $('#suPass2').value;
+  if (!/^\d{6}$/.test(code)) { suMsg('Digite o código de 6 números recebido por e-mail.'); return; }
+  if (p1.length < 6) { suMsg('A senha deve ter ao menos 6 caracteres.'); return; }
+  if (p1 !== p2) { suMsg('As senhas não conferem.'); return; }
+
+  const btn = $('#suSaveBtn');
+  btn.disabled = true; btn.textContent = 'Criando…';
+  const out = await callPublicFn({ action: 'signup_confirm', cpf, code, password: p1 });
+  btn.disabled = false; btn.textContent = 'Criar meu acesso';
+  if (out.error) { suMsg(out.error); return; }
+
+  suMsg('Acesso criado! Entrando…', true);
+  const { error } = await db.auth.signInWithPassword({ email: out.email, password: p1 });
+  if (error) {
+    showSignup(false);
+    const m = $('#authMsg');
+    m.textContent = 'Acesso criado com sucesso! Entre com seu CPF e a senha que você acabou de criar.';
+    m.className = 'msg show ok';
+    $('#login').value = cpf;
+    return;
+  }
+  boot();
+});
+
 /* ---------- tabs ---------- */
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === t));

@@ -6,7 +6,7 @@
 <title>Painel Administrativo — Clínica Vittalit</title>
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="../img/favicon.png">
-<link rel="stylesheet" href="../css/portal.css?v=7">
+<link rel="stylesheet" href="../css/portal.css?v=8">
 </head>
 <body>
 
@@ -130,6 +130,22 @@
         <div class="field"><label>Link da loja online</label><input id="set_store_url" placeholder="https://…"></div>
         <button class="btn btn-primary" id="saveSettingsBtn" style="width:auto">Salvar configurações</button>
       </div>
+
+      <div class="card">
+        <h3>Integração com o Medicit</h3>
+        <p style="color:var(--muted);font-size:.86rem;margin-bottom:14px">
+          Os pacientes do sistema da clínica são sincronizados automaticamente todos os dias às 22h.
+          Com isso, o paciente cria o próprio acesso no portal usando CPF e data de nascimento.
+        </p>
+        <div class="msg" id="syncMsg"></div>
+        <div id="syncStatus"></div>
+        <div class="toolrow" style="margin-top:14px">
+          <button class="btn btn-soft btn-sm" id="syncNowBtn" style="width:auto">Sincronizar agora</button>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.88rem;font-weight:600;color:var(--muted)">
+            <input type="checkbox" id="signupEnabled"> Permitir que o paciente crie o próprio acesso
+          </label>
+        </div>
+      </div>
     </section>
 
     <!-- conta -->
@@ -153,6 +169,14 @@
     <button class="x" data-close>✕</button>
     <h3>Novo paciente</h3>
     <div class="msg" id="patientMsg"></div>
+    <div class="field" style="background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 15px">
+      <label>Buscar no sistema da clínica (Medicit)</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="lookupCpf" placeholder="Digite o CPF e busque" inputmode="numeric" style="flex:1 1 180px">
+        <button class="btn btn-soft btn-sm" id="lookupBtn" type="button" style="width:auto">🔍 Buscar</button>
+      </div>
+      <p class="hint">Preenche os dados automaticamente, sem redigitar o cadastro.</p>
+    </div>
     <div class="grid2">
       <div class="field"><label>Nome completo *</label><input id="np_name"></div>
       <div class="field"><label>CPF * (será o login)</label><input id="np_cpf" placeholder="000.000.000-00"></div>
@@ -256,8 +280,8 @@
   </div>
 </div>
 
-<script src="../js/supabase.js?v=7"></script>
-<script src="../js/config.js?v=7"></script>
-<script src="admin.js?v=7"></script>
+<script src="../js/supabase.js?v=8"></script>
+<script src="../js/config.js?v=8"></script>
+<script src="admin.js?v=8"></script>
 </body>
 </html>

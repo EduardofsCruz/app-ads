@@ -7,7 +7,7 @@
 <meta name="description" content="Acesse seus resultados de exames, plano alimentar e acompanhamento de gestação — Portal do Paciente da Clínica Vittalit.">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="../img/favicon.png">
-<link rel="stylesheet" href="../css/portal.css?v=6">
+<link rel="stylesheet" href="../css/portal.css?v=8">
 </head>
 <body>
 
@@ -32,7 +32,55 @@
         </p>
       </div>
       <button class="btn btn-primary" id="loginBtn" type="submit">Entrar</button>
+      <p class="hint" style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+        É seu primeiro acesso?
+        <a href="#" id="signupLink" style="color:var(--blue-deep);font-weight:700">Criar minha senha</a>
+      </p>
     </form>
+
+    <!-- primeiro acesso -->
+    <div id="signupBox" class="hidden">
+      <div class="msg" id="suMsg"></div>
+
+      <div id="suStep1">
+        <p class="hint" style="margin-bottom:14px">Se você já é paciente da clínica, use seu CPF e data de nascimento para criar sua senha de acesso.</p>
+        <div class="field">
+          <label for="suCpf">CPF</label>
+          <input id="suCpf" inputmode="numeric" placeholder="000.000.000-00">
+        </div>
+        <div class="field">
+          <label for="suBirth">Data de nascimento</label>
+          <input id="suBirth" type="date">
+        </div>
+        <div class="field hidden" id="suEmailField">
+          <label for="suEmail">Seu e-mail</label>
+          <input id="suEmail" type="email" placeholder="para receber o código e recuperar a senha depois">
+          <p class="hint">Não encontramos e-mail no seu cadastro. Informe um para continuar.</p>
+        </div>
+        <button class="btn btn-primary" id="suSendBtn" type="button">Continuar</button>
+      </div>
+
+      <div id="suStep2" class="hidden">
+        <p class="hint" style="margin-bottom:12px" id="suSentTo"></p>
+        <div class="field">
+          <label for="suCode">Código recebido por e-mail</label>
+          <input id="suCode" inputmode="numeric" maxlength="6" placeholder="000000" style="letter-spacing:.4em;text-align:center;font-weight:700">
+        </div>
+        <div class="field">
+          <label for="suPass">Crie sua senha (mín. 6 caracteres)</label>
+          <input id="suPass" type="password" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label for="suPass2">Repita a senha</label>
+          <input id="suPass2" type="password" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" id="suSaveBtn" type="button">Criar meu acesso</button>
+      </div>
+
+      <p class="hint" style="text-align:center;margin-top:14px">
+        <a href="#" id="signupBack" style="color:var(--blue-deep);font-weight:700">← Voltar ao login</a>
+      </p>
+    </div>
 
     <!-- recuperação de senha -->
     <div id="forgotBox" class="hidden">
@@ -97,8 +145,8 @@
   </main>
 </div>
 
-<script src="../js/supabase.js?v=6"></script>
-<script src="../js/config.js?v=6"></script>
-<script src="portal.js?v=6"></script>
+<script src="../js/supabase.js?v=8"></script>
+<script src="../js/config.js?v=8"></script>
+<script src="portal.js?v=8"></script>
 </body>
 </html>
