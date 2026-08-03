@@ -88,11 +88,75 @@ async function callAdminFn(payload) {
 }
 
 /* ---------- pacientes ---------- */
+let listMode = 'portal';
+
 async function loadPatients() {
-  const { data } = await db.from('vittalit_users')
-    .select('*').eq('role', 'patient').order('full_name');
+  const [{ data }, { count }] = await Promise.all([
+    db.from('vittalit_users').select('*').eq('role', 'patient').order('full_name'),
+    db.from('vittalit_medicit_patients').select('cpf', { count: 'exact', head: true }),
+  ]);
   patients = data || [];
-  renderPatients();
+  $('#cntPortal').textContent = patients.length;
+  $('#cntMedicit').textContent = count ?? 0;
+  render();
+}
+
+document.querySelectorAll('[data-plist]').forEach((t) => t.addEventListener('click', () => {
+  listMode = t.dataset.plist;
+  document.querySelectorAll('[data-plist]').forEach((x) => x.classList.toggle('active', x === t));
+  render();
+}));
+
+const render = () => (listMode === 'portal' ? renderPatients() : renderMedicit());
+
+/* pacientes vindos do sistema da clínica (ainda sem acesso ao portal) */
+let medicitTimer = null;
+async function renderMedicit() {
+  const box = $('#patientList');
+  const q = $('#patientSearch').value.trim();
+  $('#listHint').textContent = 'Pacientes do sistema da clínica (Medicit). Eles só aparecem na aba anterior depois que tiverem acesso ao portal.';
+  if (q.length < 3) {
+    box.innerHTML = '<p class="empty">Digite ao menos 3 letras do nome ou o CPF para buscar.<br><small>São milhares de cadastros — a busca evita carregar todos de uma vez.</small></p>';
+    return;
+  }
+  box.innerHTML = '<p class="empty">Buscando…</p>';
+  const digits = q.replace(/\D/g, '');
+  let query = db.from('vittalit_medicit_patients').select('*').limit(50).order('full_name');
+  query = digits.length >= 3 ? query.like('cpf', `%${digits}%`) : query.ilike('full_name', `%${q}%`);
+  const { data } = await query;
+
+  if (!data?.length) { box.innerHTML = '<p class="empty">Nenhum paciente encontrado com esses dados.</p>'; return; }
+  const comAcesso = new Set(patients.map((p) => p.cpf));
+  box.innerHTML = data.map((m) => {
+    const tem = comAcesso.has(m.cpf);
+    return `
+      <div class="item">
+        <span class="ic">🗂️</span>
+        <div class="tx">
+          <b>${esc(m.full_name)}</b>
+          <small>CPF ${fmtCpf(m.cpf)}${m.birth_date ? ' · ' + fmtDate(m.birth_date) : ''}${m.phone ? ' · ' + esc(m.phone) : ''}</small>
+        </div>
+        <div class="actions">
+          ${tem
+            ? '<span class="badge green">já tem acesso</span>'
+            : `<button class="btn btn-soft btn-sm" data-newfrom="${esc(m.cpf)}">Criar acesso</button>`}
+        </div>
+      </div>`;
+  }).join('');
+
+  box.querySelectorAll('[data-newfrom]').forEach((b) => b.addEventListener('click', () => {
+    const m = data.find((x) => x.cpf === b.dataset.newfrom);
+    lookupResult = { id_pessoa: m.id_pessoa, full_name: m.full_name, phone: m.phone, birth_date: m.birth_date, email: m.email };
+    $('#np_name').value = m.full_name || '';
+    $('#np_cpf').value = m.cpf;
+    $('#np_phone').value = m.phone || '';
+    $('#np_birth').value = (m.birth_date || '').slice(0, 10);
+    $('#np_email').value = m.email || '';
+    $('#lookupCpf').value = m.cpf;
+    $('#np_pass').value = 'Vit' + Math.random().toString(36).slice(2, 8) + Math.floor(Math.random() * 90 + 10);
+    $('#patientMsg').classList.remove('show');
+    $('#patientModal').classList.add('show');
+  }));
 }
 
 function renderPatients() {
@@ -100,8 +164,9 @@ function renderPatients() {
   const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const list = patients.filter((p) => !q || norm(p.full_name).includes(norm(q)) || (p.cpf || '').includes(q.replace(/\D/g, '') || '§'));
   const box = $('#patientList');
+  $('#listHint').textContent = 'Pacientes que já criaram (ou receberam) acesso ao portal.';
   if (!list.length) {
-    box.innerHTML = `<p class="empty">${patients.length ? 'Nenhum paciente encontrado.' : 'Nenhum paciente cadastrado ainda.<br><small>Clique em "+ Novo paciente" para começar.</small>'}</p>`;
+    box.innerHTML = `<p class="empty">${patients.length ? 'Nenhum paciente encontrado.' : 'Nenhum paciente com acesso ainda.<br><small>Use a aba "Cadastro da clínica" para criar o acesso de quem já é paciente.</small>'}</p>`;
     return;
   }
   box.innerHTML = list.map((p) => `
@@ -116,7 +181,11 @@ function renderPatients() {
     </div>`).join('');
   box.querySelectorAll('[data-id]').forEach((el) => el.addEventListener('click', () => openPatient(el.dataset.id)));
 }
-$('#patientSearch').addEventListener('input', renderPatients);
+$('#patientSearch').addEventListener('input', () => {
+  if (listMode === 'portal') return renderPatients();
+  clearTimeout(medicitTimer);
+  medicitTimer = setTimeout(renderMedicit, 350);
+});
 
 /* busca no Medicit para preencher o cadastro */
 let lookupResult = null;

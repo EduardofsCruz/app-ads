@@ -6,7 +6,7 @@
 <title>Painel Administrativo — Clínica Vittalit</title>
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/png" href="../img/favicon.png">
-<link rel="stylesheet" href="../css/portal.css?v=10">
+<link rel="stylesheet" href="../css/portal.css?v=12">
 </head>
 <body>
 
@@ -56,6 +56,10 @@
 
     <!-- pacientes -->
     <section class="panel active" data-panel="patients">
+      <div class="tabs" style="margin-bottom:14px">
+        <button class="tab active" data-plist="portal">Com acesso ao portal <span class="badge blue" id="cntPortal">0</span></button>
+        <button class="tab" data-plist="medicit">Cadastro da clínica <span class="badge blue" id="cntMedicit">0</span></button>
+      </div>
       <div class="toolrow">
         <label class="search">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -63,6 +67,7 @@
         </label>
         <button class="btn btn-primary" id="newPatientBtn" style="width:auto">+ Novo paciente</button>
       </div>
+      <p class="hint" id="listHint" style="margin:-6px 0 12px"></p>
       <div class="card" id="patientList"></div>
     </section>
 
@@ -280,8 +285,8 @@
   </div>
 </div>
 
-<script src="../js/supabase.js?v=8"></script>
-<script src="../js/config.js?v=8"></script>
-<script src="admin.js?v=8"></script>
+<script src="../js/supabase.js?v=12"></script>
+<script src="../js/config.js?v=12"></script>
+<script src="admin.js?v=12"></script>
 </body>
 </html>
