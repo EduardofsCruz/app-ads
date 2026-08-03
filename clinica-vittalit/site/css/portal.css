@@ -221,7 +221,43 @@ input, select, textarea { font: inherit; color: var(--ink); }
 
 @media (max-width: 640px) {
   .grid2, .grid3 { grid-template-columns: 1fr; }
-  .item { flex-wrap: wrap; }
-  .item .actions { width: 100%; justify-content: flex-start; }
   .topbar .who small { display: none; }
+  .topbar-in, .main { width: calc(100% - 28px); }
+  .main { margin-top: 20px; }
+
+  .card { padding: 18px 16px; border-radius: 16px; }
+  .card h3 { font-size: 1rem; }
+  .pagehead h2 { font-size: 1.25rem; }
+
+  .tabs { gap: 6px; margin-bottom: 18px; }
+  .tab { padding: 9px 15px; font-size: .84rem; }
+
+  /* itens de lista: ações em linha, largura total */
+  .item { flex-wrap: wrap; padding: 13px 14px; gap: 11px; }
+  .item .ic { width: 36px; height: 36px; }
+  .item .tx b { white-space: normal; }
+  .item .actions {
+    width: 100%; flex-direction: row !important; align-items: center !important;
+    justify-content: flex-start; gap: 8px; margin-top: 2px;
+  }
+  .item .actions .btn { flex: 1 1 auto; justify-content: center; }
+  .item .actions select { flex: 1 1 auto; }
+
+  /* etiqueta solta (ex.: "2 arquivos") desce para a linha de baixo,
+     devolvendo largura ao texto do exame */
+  .item > .badge { order: 3; margin-left: 47px; }
+  .item .tx { flex: 1 1 calc(100% - 47px); }
+
+  /* botões de ação do paciente lado a lado */
+  .toolrow { gap: 8px; }
+  .toolrow .btn { width: auto; flex: 1 1 140px; }
+
+  .modal { padding: 22px 18px; max-height: 92svh; border-radius: 18px; }
+  .modal h3 { font-size: 1.05rem; }
+  .auth-card { padding: 30px 22px; border-radius: 20px; }
+  .auth-card .logo { width: 112px; }
+
+  .tagbtn { padding: 8px 13px; font-size: .76rem; }
+  .field input, .field select, .field textarea { padding: 12px 14px; font-size: 16px; }
+  .preg-hero b { font-size: 1.35rem; }
 }
