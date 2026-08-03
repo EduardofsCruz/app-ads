@@ -8,6 +8,21 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('pt-BR') : '';
 const fmtCpf = (c) => c ? c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '—';
+
+/* valida o CPF pelos dígitos verificadores (pega erro de digitação) */
+function cpfValido(raw) {
+  const c = String(raw || '').replace(/\D/g, '');
+  if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
+  const d = c.split('').map(Number);
+  let s = 0;
+  for (let i = 0; i < 9; i++) s += d[i] * (10 - i);
+  let r = (s * 10) % 11; if (r === 10) r = 0;
+  if (r !== d[9]) return false;
+  s = 0;
+  for (let i = 0; i < 10; i++) s += d[i] * (11 - i);
+  r = (s * 10) % 11; if (r === 10) r = 0;
+  return r === d[10];
+}
 const flash = (el, text, ok = false) => {
   el.textContent = text;
   el.classList.remove('ok', 'err');
@@ -231,6 +246,16 @@ $('#newPatientBtn').addEventListener('click', () => {
 
 $('#createPatientBtn').addEventListener('click', async () => {
   const btn = $('#createPatientBtn'); const msg = $('#patientMsg');
+  const cpfDigitado = $('#np_cpf').value.replace(/\D/g, '');
+  if (cpfDigitado.length !== 11) { flash(msg, 'O CPF deve ter 11 números.'); return; }
+  if (!cpfValido(cpfDigitado) && !lookupResult) {
+    if (!confirm(
+      `O CPF ${fmtCpf(cpfDigitado)} não parece válido — normalmente isso é erro de digitação.\n\n`
+      + 'Confira o número antes de continuar.\n\nDeseja cadastrar assim mesmo?')) {
+      flash(msg, 'Confira o CPF e tente novamente.');
+      return;
+    }
+  }
   btn.disabled = true; btn.textContent = 'Cadastrando…';
   const out = await callAdminFn({
     action: 'create_patient',
@@ -829,15 +854,39 @@ async function loadSync() {
       </div>
     </div>
     ${semCpf ? `<p class="hint" style="margin-bottom:12px">Nenhum paciente foi perdido: o login do portal é feito pelo CPF, então quem ainda não tem CPF no Medicit não consegue criar acesso sozinho. Basta incluir o CPF no cadastro que ele passa a poder usar no mesmo dia — ou a recepção cria o acesso manualmente.</p>` : ''}
-    <div class="item">
-      <span class="ic">🔄</span>
-      <div class="tx" style="white-space:normal">
-        <b>Última sincronização: ${new Date(last.started_at).toLocaleString('pt-BR')}</b>
-        <small>${last.new_patients ? `${n(last.new_patients)} paciente(s) novo(s) nesta carga` : 'sem novos pacientes nesta carga'}</small>
-        ${last.message ? `<small style="display:block;margin-top:3px">${esc(last.message)}</small>` : ''}
-      </div>
-      <span class="badge ${label[1]}">${label[0]}</span>
-    </div>`;
+    <div id="cpfSuspect"></div>`;
+
+  // cadastros com CPF possivelmente digitado errado
+  const { data: stats } = await db.rpc('vittalit_cpf_stats');
+  const suspeitos = stats?.[0]?.cpf_suspeito || 0;
+  if (suspeitos) {
+    $('#cpfSuspect').innerHTML = `
+      <div class="item" style="border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.05)">
+        <span class="ic" style="background:rgba(220,38,38,.12);color:var(--err)">⚠️</span>
+        <div class="tx" style="white-space:normal">
+          <b>${n(suspeitos)} cadastro(s) com CPF possivelmente incorreto</b>
+          <small>O número não passa na verificação oficial — geralmente é erro de digitação. Esses pacientes não conseguirão entrar no portal até o CPF ser corrigido no Medicit.</small>
+        </div>
+        <div class="actions"><button class="btn btn-soft btn-sm" id="listSuspectBtn">Ver lista</button></div>
+      </div>`;
+    $('#listSuspectBtn').addEventListener('click', async () => {
+      const btn = $('#listSuspectBtn');
+      btn.disabled = true; btn.textContent = 'Carregando…';
+      const { data: rows } = await db.rpc('vittalit_cpf_suspeitos');
+      btn.disabled = false; btn.textContent = 'Ver lista';
+      if (!rows?.length) return;
+      $('#cpfSuspect').insertAdjacentHTML('beforeend', `
+        <div class="card" style="margin-top:10px;max-height:340px;overflow:auto">
+          <p class="hint" style="margin-bottom:10px">Corrija estes CPFs no Medicit — na sincronização seguinte eles ficam liberados.</p>
+          ${rows.map((r) => `
+            <div class="item" style="padding:10px 12px">
+              <div class="tx"><b style="font-size:.9rem">${esc(r.full_name)}</b><small>CPF cadastrado: ${esc(r.cpf)}${r.phone ? ' · ' + esc(r.phone) : ''}</small></div>
+            </div>`).join('')}
+        </div>`);
+      btn.remove();
+    });
+  }
+
 }
 
 $('#syncNowBtn').addEventListener('click', async () => {
